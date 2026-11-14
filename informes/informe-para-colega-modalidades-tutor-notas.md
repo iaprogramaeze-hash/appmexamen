@@ -3,6 +3,8 @@
 **Para:** equipo backend (`backend-epet-n36`)
 **De:** equipo frontend (app móvil `appmexamen`)
 **Fecha:** 2026-11-13
+**Actualizado:** 2026-11-14 — el vínculo pasó a ser por **DNI del alumno +
+aceptación** (§3.3); esto reemplaza al flujo por código de la versión anterior.
 **Motivo:** la app móvil agrega **rol tutor/padre**, **notas trimestrales** y
 **asistencias**. Nosotros **no tocamos backend ni BD**; este informe es el
 pedido para que ustedes lo implementen. La app consume los contratos de §3.
@@ -14,7 +16,7 @@ pedido para que ustedes lo implementen. La app consume los contratos de §3.
 | Tema | Qué pedimos | Quién |
 |---|---|---|
 | Rol `tutor` | Rol nuevo de solo lectura (notas + asistencias de sus alumnos) | Uds |
-| Vínculo tutor ↔ alumno | Tabla + flujo por **código que genera el alumno** | Uds |
+| Vínculo tutor ↔ alumno | Tabla + flujo por **DNI del alumno + aceptación en la app**; **máx. 1 tutor activo por alumno** | Uds |
 | Notas trimestrales | Endpoint(s) de lectura; los datos **ya se cargan del otro sistema (SIGME)** | Uds |
 | Asistencias a clases | Ídem: lectura; origen SIGME | Uds |
 | `GET /auth/yo` | Que devuelva el rol `tutor` en `roles` (la app ramifica pantallas con eso) | Uds |
@@ -70,18 +72,35 @@ Base: `/api/v1` (mismo prefijo que hoy). Auth: JWT bearer, igual que
 
 | Método | Ruta | Body / salida | Estados |
 |---|---|---|---|
-| `POST` | `/auth/registro` *(si aún no existe, crear)* | `{ email, password, nombre, apellido, documento, rol: "tutor" }` → `201` | Registro de tutor. **Definan** si es libre o requiere aprobación (D10 es libre para alumno). |
+| `POST` | `/auth/registro` *(si aún no existe, crear)* | `{ email, password, nombre, apellido, documento, rol: "tutor", dni_alumno }` → `201` | Registro de tutor **con el DNI del alumno asociado** (ver §3.3). **Definan** si la cuenta es libre o requiere aprobación (D10 es libre para alumno). |
 
-### 3.3 Vínculo por código (alumno genera → tutor consume)
+### 3.3 Vínculo por DNI + aceptación del alumno (reemplaza al flujo por código)
 
-Flujo acordado: **el alumno controla quién ve sus datos**.
+**Cambio respecto de la versión anterior (2026-11-13):** el vínculo ya no se
+crea con código generado por el alumno. La **creación de la cuenta tutor** lleva
+el **DNI del alumno** asociado, y el **alumno debe aceptar** el vínculo desde la
+app. Regla de negocio: **un alumno puede tener máximo 1 tutor activo** (la
+impone el backend).
+
+Flujo:
+
+1. El tutor se registra indicando el DNI del alumno → queda un vínculo en
+   estado `pendiente`.
+2. El alumno ve la solicitud en la app y la **acepta** o la **rechaza**.
+3. Recién con `aceptado` el tutor puede leer notas/asistencias del alumno.
 
 | Método | Ruta | Quién | Body / salida |
 |---|---|---|---|
-| `POST` | `/vinculos/codigo` | alumno | → `201 { codigo, expira_en }` — código de un solo uso, corta vida (sugerimos 10–30 min). Regenerar invalida el anterior. |
-| `POST` | `/vinculos/consumir` | tutor | `{ codigo }` → `201 { alumno_id, alumno_nombre }` o `404`/`409` si inválido/usado/vencido. |
-| `GET` | `/vinculos` | tutor | → `200 { alumnos: [ { id, nombre, documento } ] }` |
-| `DELETE` | `/vinculos/{alumno_id}` | tutor | → `204` — desvincular (tutor o alumno, ver 3.6). |
+| `POST` | `/auth/registro` | tutor | Como §3.2 con `dni_alumno` → `201` y vínculo `pendiente`. `404`/`422` si el DNI no corresponde a un alumno; `409` si el alumno ya tiene tutor activo. |
+| `GET` | `/vinculos/pendientes` | alumno | → `200 { solicitudes: [ { id, tutor_nombre, tutor_email, creado_en } ] }` |
+| `POST` | `/vinculos/{id}/aceptar` | alumno (dueño) | → `200 { alumno_id, tutor_id }` — pasa a `aceptado`. `409` si el alumno ya tiene tutor activo. |
+| `POST` | `/vinculos/{id}/rechazar` | alumno (dueño) | → `204` — queda `rechazado`. |
+| `GET` | `/vinculos` | tutor | → `200 { alumnos: [ { id, nombre, documento, estado } ] }` — sus vínculos con estado; la app muestra los `aceptados`. |
+| `DELETE` | `/vinculos/{alumno_id}` | tutor o alumno | → `204` — desvincular (ver 3.6). |
+
+Estados: `pendiente` → `aceptado` | `rechazado`; `aceptado` → baja por
+`DELETE`. Mientras exista un vínculo `aceptado` para el alumno, no se aceptan
+otros (`409`). Tras desvincular, el alumno puede aceptar una solicitud nueva.
 
 ### 3.4 Notas trimestrales
 
@@ -114,8 +133,7 @@ No es mandatorio; es para que el pedido se entienda con tablas concretas.
 
 | Tabla (sugerida) | Campos mínimos |
 |---|---|
-| `fa_vinculo_tutor` | `id`, `tutor_usuario_id` FK, `alumno_usuario_id` FK (o `persona_id`), `estado`, `created_at`, `deleted_at`. Índice único activo por par. |
-| `fa_codigo_vinculo` | `id`, `codigo` (único), `alumno_usuario_id`, `expira_en`, `usado_en` (nullable), `created_at`. |
+| `fa_vinculo_tutor` | `id`, `tutor_usuario_id` FK, `alumno_usuario_id` FK (o `persona_id`), `estado` (`pendiente`/`aceptado`/`rechazado`), `created_at`, `updated_at`, `deleted_at`. **Índice único parcial: un solo `aceptado` por alumno** (regla de 1 tutor). |
 | Notas | Si SIGME ya las tiene: **exponerlas** (vista/proxy/sync como prefieran). Si hay que guardarlas acá: `alumno`, `materia`, `trimestre`, `nota`, `anio_lectivo`. |
 | Asistencias | Ídem: origen SIGME; si se materializa acá: `alumno`, `fecha`, `materia`, `presente`, `motivo?`. |
 
@@ -127,9 +145,12 @@ importación periódica; la app solo llama los endpoints de §3.
 
 ## 5. Seguridad (mínimo esperado)
 
-- Código de vínculo: un solo uso, expiración, rate limit al consumir (mismo
-  estilo que `olvido-clave`).
-- `403` si un tutor pide notas/asistencias de un alumno **sin vínculo**.
+- Alta de tutor con `dni_alumno`: validar que el DNI exista y corresponda a un
+  alumno; rate limit al registro (mismo estilo que `olvido-clave`).
+- Aceptar/rechazar vínculo solo el **alumno dueño** de la solicitud; `409` al
+  aceptar si ya hay tutor activo.
+- `403` si un tutor pide notas/asistencias de un alumno **sin vínculo
+  aceptado**.
 - `403` si un alumno intenta las rutas `/tutor/*`.
 - Auditoría de creación/baja de vínculos (como ya hacen con lo demás).
 - No exponer en respuestas de tutor datos del alumno fuera de nombre,
@@ -141,8 +162,9 @@ importación periódica; la app solo llama los endpoints de §3.
 
 - [ ] Rol `tutor` en seed + matriz de permisos (§2)
 - [ ] `GET /auth/yo` devuelve `tutor` en `roles`
-- [ ] `POST /auth/registro` (o alta equivalente) para tutor
-- [ ] Tablas + endpoints de vínculo por código (§3.3)
+- [ ] `POST /auth/registro` de tutor **con `dni_alumno`** (§3.2)
+- [ ] Tabla `fa_vinculo_tutor` con estados + endpoints de DNI/aceptación (§3.3)
+- [ ] Regla **1 tutor activo por alumno** (`409` + índice único)
 - [ ] `GET /notas` (alumno) y `GET /tutor/alumnos/{id}/notas` (§3.4)
 - [ ] `GET /tutor/alumnos/{id}/asistencias` (§3.5)
 - [ ] Acota por dueño/vínculo + tests de `403` (§5)

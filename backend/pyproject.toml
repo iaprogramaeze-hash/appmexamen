@@ -1,0 +1,50 @@
+[project]
+name = "backend-epet-n36"
+version = "0.1.0"
+description = "Backend EPET36: API de mesas de examenes y preinscripcion (SIGME / SIGME-M / Landing)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic-settings>=2.5",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "argon2-cffi>=23.1",
+    "PyJWT[crypto]>=2.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "aiosqlite>=0.20",
+    "ruff>=0.7",
+    "alembic>=1.14",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B008: Depends() en defaults de argumentos es el patrón idiomático de FastAPI.
+ignore = ["B008"]
+
+[tool.ruff.lint.isort]
+# El directorio local alembic/ (script_location) hace que ruff lo detecte como
+# first-party; la librería importada en env.py es el paquete instalado.
+known-third-party = ["alembic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"

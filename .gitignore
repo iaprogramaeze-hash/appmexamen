@@ -12,3 +12,7 @@ __pycache__/
 # (github.com/formulariosepetn36-ai/backend-epet-n36) — se clona aparte
 # según "Instructivos para bajar y ejecutar el backend.txt".
 backend-epet-n36-main/
+
+# backend/ es un snapshot de backend-epet-n36 (HEAD 6609eec) para desarrollo
+# local del frontend. NO modificar aquí: los cambios son del colega; resincronizar
+# desde el repo original cuando avance.

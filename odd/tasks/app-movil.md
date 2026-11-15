@@ -100,13 +100,13 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | ID | S# | Tarea | Ruta | Estado | Commit |
 |----|----|-------|------|--------|--------|
 | T1 | S1 | Scaffold Expo en `mobile/` + rama `feat/app-movil` | inline | **Hecho** | 598d2b4 |
-| T2 | S9 | Capa API (`API_BASE`, cliente auth con token) | inline | Parcial: auth con fallback demo; faltan clientes mesas/notas/asistencias | 598d2b4 |
-| T3 | S8 | Pantallas de acceso: Login, Recuperar, Registro | inline | **Hecho** (iteración visual pendiente en T10) | 598d2b4 |
+| T2 | S9 | Capa API (`API_BASE`, cliente auth con token) | inline | **Hecho** (clientes mesas, inscripciones, notas, asistencias en `src/api.ts`) | 598d2b4 |
+| T3 | S8 | Pantallas de acceso: Login, Recuperar, Registro | inline | **Hecho** (iteración visual aplicada: mascot con máscara circular en acceso) | 598d2b4 |
 | T4 | S2,S8 | Navegación por roles (tabs alumno / tutor) | inline | **Hecho** | 598d2b4 |
-| T5 | S8 | Inicio + Inscripción (mesas) | inline | Parcial: pantalla con datos demo; sin cablear `GET /mesas-disponibles` + `POST /inscripciones` | 598d2b4 |
-| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Parcial: pantalla con datos demo; sin `GET /notas` | 598d2b4 |
-| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Parcial: pantallas creadas; código sin backend | 598d2b4 |
-| T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | Parcial: pantallas creadas; sin flujo de vínculo real | 598d2b4 |
+| T5 | S8 | Inicio + Inscripción (mesas) | inline | Esqueleto visual vacío; sin datos demo, sin cablear API (espera backend) | 598d2b4 |
+| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Esqueleto visual vacío; sin datos demo, sin `GET /notas` | 598d2b4 |
+| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Esqueleto visual vacío en Permisos; Perfil sin datos de backend | 598d2b4 |
+| T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | Notas y Asistencias en esqueleto visual vacío; sin datos de backend | 598d2b4 |
 | T9 | S2 | Quitar rastro de admin; menú solo según rol | inline | **Hecho** | 598d2b4 |
 | T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Pendiente | |
 | T11 | S7 | Informe colega entregado (ya redactado) | docs | **Hecho** | 27f68c2 |
@@ -152,3 +152,37 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 - **L10** (2026-11-13): "sigue con las lista de acciones una por una" —
   orden acordado: 1 commit unidad 1 → 2 iteración visual → 3 capa API real →
   4 tests → 5 APK → 6 push/cierre.
+- **L15** (2026-11-14): iteración visual Paso 1 aplicada a todas las pantallas
+  de acceso y pestañas: mascot con máscara circular (tatu-estudia en acceso,
+  mesas-examen/calificaciones/asistencia según pantalla), fondo lavanda con
+  gradiente, CTA durazno, tab bar flotante oscuro tipo píldora, nivel y barra
+  de progreso en Inicio. Referencia: imágenes de `imagenes/diseño app/`
+  (1.webp a 4.webp). `tsc --noEmit` limpio.
+- **L16** (2026-11-14): Paso 2 capa API real — creado `mobile/src/api.ts` con
+  `fetchMesasDisponibles`, `postInscripcion`, `fetchNotasAlumno`,
+  `fetchNotasTutor`, `fetchAsistenciasTutor`. `API_BASE` exportado desde
+  `src/auth.tsx`. `tsc --noEmit` limpio. Pendiente: cablear pantallas (Paso 3).
+- **L17** (2026-11-14): Paso 3 pantallas vaciadas de datos demo — Inicio,
+  Permisos (alumno) y Notas + Asistencias (tutor) quedan como esqueleto visual
+  vacío (sin datos inventados, sin llamadas a API). Se conectan al backend
+  cuando el colega exponga los endpoints. `tsc --noEmit` limpio.
+- **L18** (2026-11-14): Tema oscuro aplicado — referencia `imagenes/diseño app/`
+  (5.jpg añadido: inputs pill oscuros, CTA gradiente rosa→azul, links púrpura).
+  Actualizado `theme.ts` (paleta oscura #1B0F29/#28263B/#BA98F2/#D14E8A),
+  `ui.tsx` (inputs pill oscuros, CTA gradiente, chips púrpura), tab bars
+  (activo púrpura), StatusBar `light`. `tsc --noEmit` limpio.
+- **L19** (2026-11-14): "hagas las demas pantallas que falta" + "el boton de
+  iniciar o crear usuario se deba deslizar" — creado `SlideToConfirm.tsx`
+  (Animated + PanResponder, sin deps extra); integrado en Login, Registro
+  (pasos 1 y 2) y nueva pantalla Cambiar contraseña. Nuevas pantallas:
+  `(alumno)/mesa.tsx` (detalle + inscripción deslizante), `cambiar-password.tsx`
+  (raíz, compartida). Navegación: Inicio→mesa (ejemplo), Perfil→cambiar
+  contraseña (alumno y tutor). `tsc --noEmit` limpio; Expo bundling OK.
+- **L20** (2026-11-14): "utiliza las nuevas imagenes que tienen añadidos neon"
+  — las 4 mascotas neon (`imagenes/* neon.webp`) convertidas a PNG con sharp y
+  reemplazadas en `mobile/assets/mascots/` (tatu-estudia, mesas-examen,
+  calificaciones, asistencia). Bug del SlideToConfirm corregido: PanResponder
+  retenía closures viejos de `maxD`/`disabled`/`confirmed` (knob casi no se
+  movía) — ahora se leen vía refs + interpolación de translateX para el knob.
+  Mascotas agregadas a pantallas que no tenían: Permisos (alumno) y Cambiar
+  contraseña. `tsc --noEmit` limpio.

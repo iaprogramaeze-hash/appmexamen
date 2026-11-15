@@ -9,10 +9,16 @@ __pycache__/
 .ruff_cache/
 
 # Backend: repositorio propio con su propio remoto
-# (github.com/formulariosepetn36-ai/backend-epet-n36) — se clona aparte
-# según "Instructivos para bajar y ejecutar el backend.txt".
+# (github.com/formulariosepetn36-ai/backend-epet-n36) — se clona aparte.
 backend-epet-n36-main/
 
 # backend/ es un snapshot de backend-epet-n36 (HEAD 6609eec) para desarrollo
 # local del frontend. NO modificar aquí: los cambios son del colega; resincronizar
 # desde el repo original cuando avance.
+
+# Artefactos locales de desarrollo (logs de Expo, capturas de error, reportes
+# obsoletos) — se regeneran o están superados por odd/tasks/app-movil.md.
+error.txt
+informes/tareas-pendientes-app-movil.txt
+mobile/expo-start.log
+mobile/expo-start.err

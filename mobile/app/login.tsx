@@ -1,6 +1,6 @@
 /**
- * Login — gamified kids-app style: lavender gradient, big mascot,
- * white rounded card, peach CTA with dark arrow badge.
+ * Login — dark space-app style: dark purple gradient, big mascot,
+ * dark rounded card, magenta→purple gradient CTA.
  * Functional copy matches the approved prototype (S8).
  */
 import { useRouter } from 'expo-router';
@@ -18,6 +18,7 @@ import {
 
 import { useAuth } from '../src/auth';
 import { Card, Field, PillButton, Screen } from '../src/components/ui';
+import { SlideToConfirm } from '../src/components/SlideToConfirm';
 import { colors, fonts, radii, space } from '../src/theme';
 
 export default function Login() {
@@ -95,15 +96,14 @@ export default function Login() {
               onPress={() => setShowPw((v) => !v)}
               style={styles.eye}
             >
-              <Text style={{ fontSize: 13, color: colors.purpleDeep, fontWeight: '600' }}>
+              <Text style={{ fontSize: 13, color: colors.purple, fontWeight: '600' }}>
                 {showPw ? 'Ocultar' : 'Mostrar'}
               </Text>
             </Pressable>
 
-            <PillButton
-              label={busy ? 'Ingresando…' : 'Iniciar sesión'}
-              withArrow
-              onPress={onSubmit}
+            <SlideToConfirm
+              label={busy ? 'Ingresando…' : 'Deslizá para iniciar sesión'}
+              onConfirm={onSubmit}
               disabled={busy}
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(4),
     paddingVertical: space(1.5),
     borderWidth: 1,
-    borderColor: colors.periwinkle,
+    borderColor: colors.purple,
   },
   schoolName: {
     fontWeight: '700',

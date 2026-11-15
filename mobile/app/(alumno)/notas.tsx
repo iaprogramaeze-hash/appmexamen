@@ -7,7 +7,7 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Screen } from '../../src/components/ui';
-import { colors, fonts, space } from '../../src/theme';
+import { colors, fonts, radii, space } from '../../src/theme';
 
 export default function NotasAlumno() {
   return (
@@ -23,7 +23,7 @@ export default function NotasAlumno() {
         <Card style={{ alignItems: 'center', paddingVertical: space(5) }}>
           <Image
             source={require('../../assets/mascots/calificaciones.png')}
-            style={{ width: 140, height: 140 }}
+            style={{ width: 140, height: 140, borderRadius: radii.pill }}
             resizeMode="contain"
           />
           <Text style={styles.title}>Tus notas aparecen acá</Text>

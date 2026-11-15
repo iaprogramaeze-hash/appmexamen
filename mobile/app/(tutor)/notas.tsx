@@ -1,23 +1,14 @@
 /**
- * Tutor grades view (S3/S5): read-only grades of a linked student.
- * Shows the linked-student selector; data arrives when the backend
- * endpoints (informe §3.4) exist.
+ * Tutor grades view — esqueleto visual vacío.
+ * Se llena cuando el backend exponga las notas del alumno vinculado (S3/S5).
  */
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Chip, Screen } from '../../src/components/ui';
-import { colors, fonts, space } from '../../src/theme';
-
-const ALUMNOS = [
-  { id: 'a1', nombre: 'Sofía García' },
-  { id: 'a2', nombre: 'Mateo Rodríguez' },
-];
+import { colors, fonts, radii, space } from '../../src/theme';
 
 export default function NotasTutor() {
-  const [sel, setSel] = useState(ALUMNOS[0].id);
-  const alumno = useMemo(() => ALUMNOS.find((a) => a.id === sel), [sel]);
-
   return (
     <Screen edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -28,34 +19,18 @@ export default function NotasTutor() {
           </Text>
         </View>
 
-        {/* Linked students selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}
-        >
-          {ALUMNOS.map((a) => (
-            <Chip
-              key={a.id}
-              label={a.nombre}
-              active={a.id === sel}
-              onPress={() => setSel(a.id)}
-            />
-          ))}
-        </ScrollView>
-
         <Card style={{ alignItems: 'center', paddingVertical: space(5) }}>
           <Image
             source={require('../../assets/mascots/calificaciones.png')}
-            style={{ width: 130, height: 130 }}
+            style={{ width: 130, height: 130, borderRadius: radii.pill }}
             resizeMode="contain"
           />
           <Text style={styles.title}>
-            Notas de {alumno?.nombre}
+            Aquí aparecerán las notas del alumno vinculado
           </Text>
           <Text style={[fonts.muted, { textAlign: 'center' }]}>
-            Las notas trimestrales aparecen acá cuando el sistema del colegio
-            las exponga. Vos no podés modificarlas.
+            Cuando el sistema del colegio las exponga las verás acá. Vos no
+            podés modificarlas.
           </Text>
         </Card>
 
@@ -77,9 +52,6 @@ const styles = StyleSheet.create({
   scroll: {
     padding: space(5),
     gap: space(4),
-  },
-  chipRow: {
-    gap: space(2),
   },
   title: {
     ...fonts.h3,

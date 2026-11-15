@@ -1,7 +1,7 @@
 /**
- * Shared UI primitives matching the gamified kids-app visual language:
- * lavender gradient screens, white rounded cards, peach pill CTAs,
- * dark circular arrow badges, chips and progress bars.
+ * Shared UI primitives matching the dark space-app visual language:
+ * dark purple gradient screens, dark rounded cards, magenta/purple
+ * gradient pill CTAs, chips and progress bars.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,9 +17,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, fonts, gradient, radii, shadow, space } from '../theme';
+import { colors, fonts, gradient, gradientCta, radii, shadow, space } from '../theme';
 
-/** Full-screen lavender gradient with safe areas. */
+/** Full-screen dark gradient with safe areas. */
 export function Screen({
   children,
   edges = ['top'],
@@ -40,7 +40,7 @@ export function Screen({
   );
 }
 
-/** White rounded card. */
+/** Dark rounded card. */
 export function Card({
   children,
   style,
@@ -53,7 +53,7 @@ export function Card({
 
 type PillVariant = 'primary' | 'dark' | 'ghost' | 'subtle';
 
-/** Pill button; `primary` is the peach CTA with the dark arrow badge. */
+/** Pill button; `primary` is the magenta→purple gradient CTA. */
 export function PillButton({
   label,
   onPress,
@@ -69,19 +69,17 @@ export function PillButton({
   disabled?: boolean;
   style?: ViewStyle;
 }) {
-  const isPeach = variant === 'primary';
+  const isPrimary = variant === 'primary';
   const bg: ViewStyle =
-    variant === 'primary'
-      ? { backgroundColor: colors.peach }
-      : variant === 'dark'
-        ? { backgroundColor: colors.dark }
-        : variant === 'ghost'
-          ? {
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.periwinkle,
-            }
-          : { backgroundColor: 'transparent' };
+    variant === 'dark'
+      ? { backgroundColor: colors.dark }
+      : variant === 'ghost'
+        ? {
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.purple,
+          }
+        : { backgroundColor: 'transparent' };
 
   const textColor =
     variant === 'dark'
@@ -89,6 +87,44 @@ export function PillButton({
       : variant === 'subtle'
         ? colors.muted
         : colors.ink;
+
+  const content = (
+    <>
+      <Text style={[fonts.button, { color: textColor }]}>{label}</Text>
+      {withArrow && (
+        <View style={styles.arrowBadge}>
+          <Ionicons name="arrow-up" size={14} color="#FFFFFF" />
+        </View>
+      )}
+    </>
+  );
+
+  if (isPrimary) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        disabled={disabled}
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.pill,
+          !pressed && shadow,
+          pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
+          disabled && { opacity: 0.5 },
+          style,
+        ]}
+      >
+        <LinearGradient
+          colors={[...gradientCta.colors] as [string, string, ...string[]]}
+          locations={[...gradientCta.locations]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.pillGradient}
+        >
+          {content}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -98,23 +134,17 @@ export function PillButton({
       style={({ pressed }) => [
         styles.pill,
         bg,
-        isPeach && !pressed && shadow,
         pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
         disabled && { opacity: 0.5 },
         style,
       ]}
     >
-      <Text style={[fonts.button, { color: textColor }]}>{label}</Text>
-      {withArrow && (
-        <View style={styles.arrowBadge}>
-          <Ionicons name="arrow-up" size={14} color="#FFFFFF" />
-        </View>
-      )}
+      {content}
     </Pressable>
   );
 }
 
-/** Label + rounded white input with optional leading icon. */
+/** Label + dark pill input with optional leading icon. */
 export function Field({
   label,
   icon,
@@ -127,7 +157,7 @@ export function Field({
       <View
         style={[
           styles.fieldBox,
-          focused && { borderColor: colors.purpleDeep, borderWidth: 1.5 },
+          focused && { borderColor: colors.purple, borderWidth: 1.5 },
         ]}
       >
         {icon && (
@@ -165,7 +195,7 @@ export function Chip({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={[styles.chip, active && { backgroundColor: colors.dark, borderColor: colors.dark }]}
+      style={[styles.chip, active && { backgroundColor: colors.purple, borderColor: colors.purple }]}
     >
       <Text
         style={[
@@ -228,6 +258,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space(2),
   },
+  pillGradient: {
+    minHeight: 52,
+    borderRadius: radii.pill,
+    paddingHorizontal: space(6),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space(2),
+    width: '100%',
+  },
   arrowBadge: {
     width: 30,
     height: 30,
@@ -244,13 +284,13 @@ const styles = StyleSheet.create({
   },
   fieldBox: {
     backgroundColor: colors.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: 'rgba(176, 184, 215, 0.5)',
+    borderColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: space(4),
-    minHeight: 50,
+    paddingHorizontal: space(5),
+    minHeight: 52,
     gap: space(2),
   },
   fieldInput: {

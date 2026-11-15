@@ -19,7 +19,7 @@ import React, {
   useState,
 } from 'react';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8000';
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
 export type Session = {
   token: string;

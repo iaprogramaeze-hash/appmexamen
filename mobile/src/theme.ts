@@ -1,36 +1,37 @@
 /**
  * Visual theme for the mobile app.
- * Palette derived from Dribbble shot 26993647
- * (Kids Learning App UI — Gamified Education & Interactive Lessons).
+ * Dark space theme derived from the reference designs in
+ * `imagenes/diseño app/` (dark purple backgrounds, magenta/purple accents,
+ * rounded pill inputs, gradient CTAs).
  */
 import { Platform, TextStyle, ViewStyle } from 'react-native';
 
 export const colors = {
   // Surfaces
-  bg: '#EDE9F7', // light lavender screen background
-  bgBlue: '#E4EAF6', // cool-blue end of the screen gradient
-  surface: '#FFFFFF',
-  surfaceSoft: '#F7F4FD', // faint lavender card/secondary surface
-  dark: '#0A090D', // floating tab bar / dark badges
+  bg: '#1B0F29', // darkest purple-black screen background
+  bgBlue: '#1B1A3B', // dark navy end of the screen gradient
+  surface: '#28263B', // card / input surface
+  surfaceSoft: '#1B1A3B', // secondary surface
+  dark: '#0D0B1A', // floating tab bar / dark badges
 
   // Text
-  ink: '#0A090D',
-  inkBrown: '#48303B',
-  muted: '#9BA2AE',
+  ink: '#FFFFFF',
+  inkBrown: '#E0DDEB', // secondary text (light lavender)
+  muted: '#8B87A3',
 
-  // Brand / accents (shot tags)
-  purple: '#C9AEFA',
-  purpleDeep: '#815680',
-  periwinkle: '#B0B8D7',
-  line: '#B6C8D3',
+  // Brand / accents
+  purple: '#BA98F2', // primary accent (light purple)
+  purpleDeep: '#9B7BD4', // deeper purple
+  periwinkle: '#D14E8A', // pink / magenta accent
+  line: '#3A3754', // borders
 
   // CTA
-  peach: '#F5C99E',
-  peachPressed: '#EBB684',
+  peach: '#D14E8A', // primary CTA (magenta)
+  peachPressed: '#B83D76', // pressed CTA
 
   // Feedback
-  danger: '#D93843',
-  success: '#2FA76B',
+  danger: '#FF6B6B',
+  success: '#4ADE80',
 } as const;
 
 export const radii = {
@@ -79,25 +80,31 @@ export const fonts = {
 /** Soft card elevation, tuned per platform (web falls back to a hairline). */
 export const shadow: ViewStyle = Platform.select({
   ios: {
-    shadowColor: '#4B3F72',
-    shadowOpacity: 0.1,
+    shadowColor: '#000000',
+    shadowOpacity: 0.3,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
   },
   android: { elevation: 3 },
   default: {
-    boxShadow: '0 8px 24px rgba(75, 63, 114, 0.10)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.30)',
   } as unknown as ViewStyle,
 });
 
-/** Screen gradient ends (lavender → cool blue), as in the shot. */
+/** Screen gradient ends (darkest purple → dark navy), as in the shot. */
 export const gradient = {
-  colors: ['#EDE9F7', '#E4EAF6'],
+  colors: ['#1B0F29', '#1B1A3B'],
   locations: [0, 1],
 } as const;
 
 /** Purple card gradient (level / progress card in the shot). */
 export const gradientPurple = {
-  colors: ['#9C8AF0', '#7C6BD1'],
+  colors: ['#BA98F2', '#9B7BD4'],
   locations: [0, 1],
+} as const;
+
+/** CTA gradient (magenta → purple → blue), as in the Register button. */
+export const gradientCta = {
+  colors: ['#D14E8A', '#9B7BD4', '#4A5BC7'],
+  locations: [0, 0.5, 1],
 } as const;

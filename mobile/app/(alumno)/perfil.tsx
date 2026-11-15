@@ -5,6 +5,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -51,9 +52,16 @@ export default function PerfilAlumno() {
   return (
     <Screen edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View>
-          <Text style={fonts.h1}>Perfil</Text>
-          <Text style={fonts.muted}>Tus datos y tu código de tutor</Text>
+        <View style={styles.headerRow}>
+          <Image
+            source={require('../../assets/mascots/tatu-estudia.png')}
+            style={styles.mascot}
+            resizeMode="contain"
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={fonts.h1}>Perfil</Text>
+            <Text style={fonts.muted}>Tus datos y tu código de tutor</Text>
+          </View>
         </View>
 
         <Card>
@@ -96,6 +104,11 @@ export default function PerfilAlumno() {
 
         <Card style={{ gap: space(3) }}>
           <Text style={fonts.h3}>Cuenta</Text>
+          <PillButton
+            label="Cambiar contraseña"
+            variant="ghost"
+            onPress={() => router.push('/cambiar-password')}
+          />
           <PillButton
             label="Cerrar sesión"
             variant="ghost"
@@ -161,5 +174,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.purpleDeep,
     fontWeight: '600',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(3),
+    marginBottom: space(3),
+  },
+  mascot: {
+    width: 80,
+    height: 80,
+    borderRadius: radii.pill,
   },
 });

@@ -5,6 +5,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,7 +16,8 @@ import {
 } from 'react-native';
 
 import { Card, Chip, Field, PillButton, Screen } from '../src/components/ui';
-import { colors, fonts, space } from '../src/theme';
+import { SlideToConfirm } from '../src/components/SlideToConfirm';
+import { colors, fonts, radii, space } from '../src/theme';
 
 type Paso = 1 | 2 | 3;
 
@@ -57,11 +59,18 @@ export default function Registro() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <View>
-            <Text style={fonts.h1}>Crear cuenta</Text>
-            <Text style={fonts.muted}>
-              Paso {paso} de 3 · registro libre · un D.N.I. = una cuenta
-            </Text>
+          <View style={styles.headerRow}>
+            <Image
+              source={require('../assets/mascots/tatu-estudia.png')}
+              style={styles.mascot}
+              resizeMode="contain"
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={fonts.h1}>Crear cuenta</Text>
+              <Text style={fonts.muted}>
+                Paso {paso} de 3 · registro libre · un D.N.I. = una cuenta
+              </Text>
+            </View>
           </View>
 
           {paso === 1 && (
@@ -141,11 +150,10 @@ export default function Registro() {
 
               {errorForm ? <Text style={styles.error}>{errorForm}</Text> : null}
 
-              <PillButton
-                label="Crear cuenta"
-                withArrow
+              <SlideToConfirm
+                label="Deslizá para crear cuenta"
+                onConfirm={() => setPaso(2)}
                 disabled={!!errorForm}
-                onPress={() => setPaso(2)}
               />
               <Text style={[fonts.muted, { textAlign: 'center' }]}>
                 Al crear la cuenta te llega un código al correo para
@@ -178,11 +186,10 @@ export default function Registro() {
                 value={form.codigo}
                 onChangeText={set('codigo')}
               />
-              <PillButton
-                label="Validar código"
-                withArrow
+              <SlideToConfirm
+                label="Deslizá para validar"
+                onConfirm={() => setPaso(3)}
                 disabled={form.codigo.length !== 6}
-                onPress={() => setPaso(3)}
               />
               <PillButton label="Reenviar código (60 s)" variant="subtle" />
               <PillButton
@@ -248,14 +255,27 @@ const styles = StyleSheet.create({
     minHeight: 16,
   },
   aviso: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: 'rgba(209, 78, 138, 0.15)',
     borderRadius: 16,
     padding: space(4),
+    borderWidth: 1,
+    borderColor: 'rgba(209, 78, 138, 0.4)',
   },
   avisoText: {
-    color: '#B45309',
+    color: '#F0A3C0',
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 19,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(3),
+    marginBottom: space(3),
+  },
+  mascot: {
+    width: 80,
+    height: 80,
+    borderRadius: radii.pill,
   },
 });

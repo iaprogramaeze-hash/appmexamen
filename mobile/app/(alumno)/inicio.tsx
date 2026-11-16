@@ -280,38 +280,49 @@ export default function Inicio() {
               {loading ? 'Cargando…' : 'Sin materias para este filtro.'}
             </Text>
           ) : (
-            visibles.map((m) => (
-              <Pressable
-                key={`${m.materia_id}-${m.condicion_id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`${m.materia_nombre}, ${m.condicion_nombre}`}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(alumno)/mesa',
-                    params: {
-                      materia_id: m.materia_id,
-                      condicion_id: m.condicion_id,
-                      materia: m.materia_nombre,
-                      curso: m.curso_nombre,
-                      condicion: m.condicion_nombre,
-                      orientacion: m.orientacion_nombre,
-                      fecha: m.fecha,
-                      hora: m.hora ?? '',
-                    },
-                  })
-                }
-                style={({ pressed }) => [styles.materiaRow, pressed && styles.pressed]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.materiaName}>{m.materia_nombre}</Text>
-                  <Text style={fonts.muted}>
-                    {m.condicion_nombre} · {m.curso_nombre} ·{' '}
-                    {formatFecha(m.fecha)} {formatHora(m.hora)}
-                  </Text>
-                </View>
-                <Text style={styles.chevron}>›</Text>
-              </Pressable>
-            ))
+            visibles.map((m) => {
+              const yaInscripto = inscriptas.some(
+                (i) => i.materia_id === m.materia_id && i.condicion_id === m.condicion_id,
+              );
+              return (
+                <Pressable
+                  key={`${m.materia_id}-${m.condicion_id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${m.materia_nombre}, ${m.condicion_nombre}`}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(alumno)/mesa',
+                      params: {
+                        materia_id: m.materia_id,
+                        condicion_id: m.condicion_id,
+                        materia: m.materia_nombre,
+                        curso: m.curso_nombre,
+                        condicion: m.condicion_nombre,
+                        orientacion: m.orientacion_nombre,
+                        fecha: m.fecha,
+                        hora: m.hora ?? '',
+                        inscripto: yaInscripto ? '1' : '0',
+                      },
+                    })
+                  }
+                  style={({ pressed }) => [styles.materiaRow, pressed && styles.pressed]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.materiaName}>{m.materia_nombre}</Text>
+                    <Text style={fonts.muted}>
+                      {m.condicion_nombre} · {m.curso_nombre} ·{' '}
+                      {formatFecha(m.fecha)} {formatHora(m.hora)}
+                    </Text>
+                  </View>
+                  {yaInscripto ? (
+                    <View style={[styles.estadoBadge, styles.estadoOk]}>
+                      <Text style={[styles.estadoText, styles.estadoTextOk]}>Inscripto</Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.chevron}>›</Text>
+                </Pressable>
+              );
+            })
           )}
         </Card>
 

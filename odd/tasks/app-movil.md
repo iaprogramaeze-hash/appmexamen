@@ -233,3 +233,10 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   revisada: `compileall` + `import app.main` del snapshot OK, `.gitignore`
   cubre `.env`/logs/`node_modules`, sin artefactos rastreados, y se pushearon
   `feat/app-movil` y `main` (que tenía el snapshot del backend sin publicar).
+- **L26** (2026-11-15): el listado de Inicio marca **Inscripto** cuando la
+  materia ya figura en `mis-inscripciones` y pasa el flag a la pantalla de
+  detalle, que muestra "Ya estás inscripto" en vez del deslizador (evita el
+  intento de doble inscripción). También se unificó el texto de confirmación
+  y se corrigió la formatting rota del aviso de demo. `tsc`, 20 tests y bundle
+  web OK. El push de `6e4b264` quedó **pendiente de autenticación**: el
+  credential helper de Windows se cuelga pidiendo login (sin `gh` ni token).

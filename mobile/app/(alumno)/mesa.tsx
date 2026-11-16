@@ -35,6 +35,8 @@ type Params = {
   orientacion?: string;
   fecha?: string;
   hora?: string;
+  /** '1' when the home list already knows this enrollment exists. */
+  inscripto?: string;
 };
 
 /** "2026-12-15" -> "15/12/2026". */
@@ -64,6 +66,7 @@ export default function MesaDetalle() {
   const orientacion = params.orientacion ?? '—';
   const fecha = formatFecha(params.fecha);
   const hora = formatHora(params.hora);
+  const yaInscripto = params.inscripto === '1';
 
   const inscribir = async () => {
     if (enviando) return;
@@ -152,7 +155,11 @@ export default function MesaDetalle() {
           <Row label="Orientación" value={orientacion} />
           <Row label="Fecha" value={fecha} />
           <Row label="Hora" value={hora} />
-          <Row label="Estado" value={confirmada ? 'Inscripto' : 'Disponible'} accent={!!confirmada} />
+          <Row
+            label="Estado"
+            value={confirmada || yaInscripto ? 'Inscripto' : 'Disponible'}
+            accent={!!confirmada || yaInscripto}
+          />
         </Card>
 
         <Card style={{ gap: space(3) }}>
@@ -164,14 +171,16 @@ export default function MesaDetalle() {
           </Text>
         </Card>
 
-        {confirmada ? (
+        {confirmada || yaInscripto ? (
           <Card style={{ alignItems: 'center', gap: space(2) }}>
             <Text style={{ fontSize: 40 }}>✅</Text>
-            <Text style={fonts.h3}>Inscripción registrada</Text>
+            <Text style={fonts.h3}>
+              {confirmada ? 'Inscripción registrada' : 'Ya estás inscripto'}
+            </Text>
             <Text style={[fonts.muted, { textAlign: 'center' }]}>
-              Quedaste inscripto en {confirmada.estado === 'inscripto' ? 'la mesa' : 'la mesa'}{' '}
-              de {materia}. El sistema del colegio la aprobará y vas a recibir
-              el permiso de examen.
+              {confirmada
+                ? `Quedaste inscripto en la mesa de ${materia}. El sistema del colegio la aprobará y vas a recibir el permiso de examen.`
+                : `Tu inscripción a ${materia} ya figura en esta convocatoria. No hace falta volver a inscribirte.`}
             </Text>
             <PillButton
               label="Volver al inicio"

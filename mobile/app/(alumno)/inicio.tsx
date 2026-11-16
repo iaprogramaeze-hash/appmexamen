@@ -1,12 +1,19 @@
 ﻿/**
  * Student home: available subjects + my enrollments (prototype §home, S8).
- * Esqueleto visual vacío: sin datos demo ni llamadas a API hasta que el
- * backend esté disponible. Se ajusta cuando el colega exponga los endpoints.
+ *
+ * Wired to the real backend snapshot:
+ *   - `GET /api/v1/mesas-disponibles` (live tables of the open window)
+ *   - `GET /api/v1/mis-inscripciones` (the student's own enrollments)
+ *
+ * A demo session (backend unreachable at login) shows a clear notice instead
+ * of inventing data.
  */
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   Image,
+  Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +21,14 @@ import {
 } from 'react-native';
 
 import { useAuth } from '../../src/auth';
+import {
+  ApiError,
+  apiErrorMessage,
+  fetchMesasDisponibles,
+  fetchMisInscripciones,
+  type MesaDisponible,
+  type MisInscripcion,
+} from '../../src/api';
 import {
   ArrowCircle,
   Card,
@@ -35,14 +50,98 @@ const ANIOS = [
   { key: 0, label: 'Todas' },
 ] as const;
 
+/** "1er Año" -> 1; unknown format -> 0 (never matches a year chip). */
+function anioDe(curso: string): number {
+  const match = /^(\d)/.exec(curso);
+  return match ? Number(match[1]) : 0;
+}
+
+/** "2026-12-15" -> "15/12". */
+function formatFecha(iso: string): string {
+  const [, mes, dia] = iso.split('-');
+  return mes && dia ? `${dia}/${mes}` : iso;
+}
+
+/** "08:00:00" -> "08:00". */
+function formatHora(hora: string | null): string {
+  return hora ? hora.slice(0, 5) : '—';
+}
+
+function mensajeDeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === 'ventana-cerrada') {
+      return 'La ventana de inscripción está cerrada.';
+    }
+    return apiErrorMessage(err, 'El servidor rechazó la consulta.');
+  }
+  return 'No se pudo conectar con el servidor. Revisá que el backend esté levantado.';
+}
+
 export default function Inicio() {
   const router = useRouter();
   const { session } = useAuth();
   const [anio, setAnio] = useState<number>(0);
+  const [mesas, setMesas] = useState<MesaDisponible[]>([]);
+  const [inscripciones, setInscripciones] = useState<MisInscripcion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refrescando, setRefrescando] = useState(false);
+  const [error, setError] = useState('');
+
+  const cargar = useCallback(async () => {
+    if (!session) return;
+    if (session.demo) {
+      setMesas([]);
+      setInscripciones([]);
+      setError('');
+      return;
+    }
+    try {
+      const [tablas, mias] = await Promise.all([
+        fetchMesasDisponibles(session.access),
+        fetchMisInscripciones(session.access),
+      ]);
+      setMesas(tablas);
+      setInscripciones(mias);
+      setError('');
+    } catch (err) {
+      setMesas([]);
+      setInscripciones([]);
+      setError(mensajeDeError(err));
+    }
+  }, [session]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let activo = true;
+      setLoading(true);
+      cargar().finally(() => {
+        if (activo) setLoading(false);
+      });
+      return () => {
+        activo = false;
+      };
+    }, [cargar]),
+  );
+
+  const refrescar = async () => {
+    setRefrescando(true);
+    await cargar();
+    setRefrescando(false);
+  };
+
+  const visibles = anio === 0 ? mesas : mesas.filter((m) => anioDe(m.curso_nombre) === anio);
+  const inscriptas = inscripciones.filter((i) => i.estado !== 'anulado');
+  const total = mesas.length;
+  const progreso = total > 0 ? inscriptas.length / total : 0;
 
   return (
     <Screen edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl refreshing={refrescando} onRefresh={refrescar} />
+        }
+      >
         {/* Greeting */}
         <View style={styles.greetRow}>
           <View style={{ flex: 1 }}>
@@ -54,7 +153,7 @@ export default function Inicio() {
           <ArrowCircle onPress={() => router.push('/(alumno)/perfil')} />
         </View>
 
-        {/* Purple progress card (vacío hasta que lleguen los datos) */}
+        {/* Progress card */}
         <LinearGradient
           colors={[...gradientPurple.colors] as [string, string]}
           locations={[...gradientPurple.locations]}
@@ -62,28 +161,55 @@ export default function Inicio() {
         >
           <View style={styles.levelTop}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.levelTitle}>Inscripción 0%</Text>
+              <Text style={styles.levelTitle}>
+                Inscripción {Math.round(progreso * 100)}%
+              </Text>
               <Text style={styles.levelSub}>
-                0 de 0 asignaturas · espera los datos del sistema
+                {inscriptas.length} de {total} mesas disponibles
               </Text>
             </View>
             <Text style={{ fontSize: 28 }}>🎓</Text>
           </View>
-          <ProgressBar value={0} />
+          <ProgressBar value={progreso} />
         </LinearGradient>
 
+        {session?.demo ? (
+          <Card style={{ gap: space(2) }}>
+            <Text style={styles.cardTitle}>Sesión de demostración</Text>
+            <Text style={[fonts.muted, { lineHeight: 20 }]}>
+              El backend no está conectado. Configurá{' '}
+              <Text style={styles.code}>EXPO_PUBLIC_API_BASE</Text> con la URL del
+              servidor y volvé a iniciar sesión para ver las mesas reales.
+            </Text>
+          </Card>
+        ) : null}
+
+        {error ? (
+          <Card style={{ gap: space(2) }}>
+            <Text style={styles.errorTitle}>No se pudieron cargar las mesas</Text>
+            <Text style={[fonts.muted, { lineHeight: 20 }]}>{error}</Text>
+            <PillButton label="Reintentar" variant="ghost" onPress={refrescar} />
+          </Card>
+        ) : null}
+
         {/* Mascot header for the section */}
-        <Card style={{ alignItems: 'center', paddingVertical: space(4) }}>
-          <Image
-            source={require('../../assets/mascots/mesas-examen.png')}
-            style={{ width: 120, height: 120, borderRadius: radii.pill }}
-            resizeMode="contain"
-          />
-          <Text style={styles.cardTitle}>Materias disponibles</Text>
-          <Text style={[fonts.muted, { textAlign: 'center' }]}>
-            Aquí aparecerán las mesas cuando el backend las exponga.
-          </Text>
-        </Card>
+        {!error ? (
+          <Card style={{ alignItems: 'center', paddingVertical: space(4) }}>
+            <Image
+              source={require('../../assets/mascots/mesas-examen.png')}
+              style={{ width: 120, height: 120, borderRadius: radii.pill }}
+              resizeMode="contain"
+            />
+            <Text style={styles.cardTitle}>Materias disponibles</Text>
+            <Text style={[fonts.muted, { textAlign: 'center' }]}>
+              {loading
+                ? 'Cargando mesas…'
+                : total === 0
+                  ? 'No hay mesas publicadas en la convocatoria vigente.'
+                  : 'Elegí una mesa para ver el detalle e inscribirte.'}
+            </Text>
+          </Card>
+        ) : null}
 
         {/* Year filter chips */}
         <ScrollView
@@ -101,35 +227,82 @@ export default function Inicio() {
           ))}
         </ScrollView>
 
-        {/* Subjects (vacío) */}
+        {/* Subjects */}
         <Card style={{ gap: space(3) }}>
-          <Text style={fonts.muted}>
-            Sin materias cargadas todavía.
-          </Text>
-          <PillButton
-            label="Ver ejemplo de mesa"
-            variant="ghost"
-            onPress={() =>
-              router.push({
-                pathname: '/(alumno)/mesa',
-                params: {
-                  materia: 'Matemática',
-                  anio: '3°',
-                  dia: 'Lunes 15/12',
-                  hora: '08:00',
-                  aula: 'Aula 12',
-                },
-              })
-            }
-          />
+          {visibles.length === 0 ? (
+            <Text style={fonts.muted}>
+              {loading ? 'Cargando…' : 'Sin materias para este filtro.'}
+            </Text>
+          ) : (
+            visibles.map((m) => (
+              <Pressable
+                key={`${m.materia_id}-${m.condicion_id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${m.materia_nombre}, ${m.condicion_nombre}`}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(alumno)/mesa',
+                    params: {
+                      materia_id: m.materia_id,
+                      condicion_id: m.condicion_id,
+                      materia: m.materia_nombre,
+                      curso: m.curso_nombre,
+                      condicion: m.condicion_nombre,
+                      orientacion: m.orientacion_nombre,
+                      fecha: m.fecha,
+                      hora: m.hora ?? '',
+                    },
+                  })
+                }
+                style={({ pressed }) => [styles.materiaRow, pressed && styles.pressed]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.materiaName}>{m.materia_nombre}</Text>
+                  <Text style={fonts.muted}>
+                    {m.condicion_nombre} · {m.curso_nombre} ·{' '}
+                    {formatFecha(m.fecha)} {formatHora(m.hora)}
+                  </Text>
+                </View>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            ))
+          )}
         </Card>
 
-        {/* My enrollments (vacío) */}
+        {/* My enrollments */}
         <Card style={{ gap: space(3) }}>
           <Text style={styles.cardTitle}>Mis inscripciones</Text>
-          <Text style={fonts.muted}>
-            Todavía no te inscribiste a ninguna mesa.
-          </Text>
+          {inscripciones.length === 0 ? (
+            <Text style={fonts.muted}>
+              {loading ? 'Cargando…' : 'Todavía no te inscribiste a ninguna mesa.'}
+            </Text>
+          ) : (
+            inscripciones.map((i) => (
+              <View key={i.id} style={styles.materiaRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.materiaName}>{i.materia_nombre}</Text>
+                  <Text style={fonts.muted}>
+                    {i.condicion_nombre} · {formatFecha(i.fecha)} {formatHora(i.hora)}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.estadoBadge,
+                    i.estado === 'anulado' ? styles.estadoAnulado : styles.estadoOk,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.estadoText,
+                      i.estado === 'anulado' ? styles.estadoTextAnulado : styles.estadoTextOk,
+                    ]}
+                  >
+                    {i.estado === 'anulado' ? 'Anulada' : 'Inscripto'}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
         </Card>
 
         <View style={{ height: space(24) }} />
@@ -175,6 +348,14 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...fonts.h3,
   },
+  code: {
+    fontWeight: '700',
+    color: colors.ink,
+  },
+  errorTitle: {
+    ...fonts.h3,
+    color: colors.danger,
+  },
   chipRow: {
     gap: space(2),
     paddingVertical: space(1),
@@ -185,15 +366,38 @@ const styles = StyleSheet.create({
     gap: space(3),
     paddingVertical: space(1),
   },
-  chipOk: {
-    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+  pressed: {
+    opacity: 0.6,
+  },
+  materiaName: {
+    fontWeight: '700',
+    color: colors.ink,
+    fontSize: 15,
+  },
+  chevron: {
+    fontSize: 22,
+    color: colors.purple,
+    fontWeight: '700',
+  },
+  estadoBadge: {
     borderRadius: radii.pill,
     paddingHorizontal: space(3),
     paddingVertical: space(1.5),
   },
-  chipOkText: {
-    color: '#4ADE80',
+  estadoOk: {
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+  },
+  estadoAnulado: {
+    backgroundColor: 'rgba(248, 113, 113, 0.15)',
+  },
+  estadoText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  estadoTextOk: {
+    color: '#4ADE80',
+  },
+  estadoTextAnulado: {
+    color: '#F87171',
   },
 });

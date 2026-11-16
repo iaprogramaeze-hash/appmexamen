@@ -1,6 +1,9 @@
 /**
  * Password recovery (S8): 2 steps — request token → set new password.
- * Matches the prototype copy (24h token, one-time use, min 12 chars).
+ *
+ * Wired to the backend snapshot:
+ *   - `POST /api/v1/auth/olvido-clave` (always 202, anti-enumeration)
+ *   - `POST /api/v1/auth/restablecer-clave` (one-time token, min 12 chars)
  */
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -14,6 +17,7 @@ import {
   View,
 } from 'react-native';
 
+import { apiErrorMessage, postOlvidoClave, postRestablecerClave } from '../src/api';
 import { Card, Field, PillButton, Screen } from '../src/components/ui';
 import { colors, fonts, radii, space } from '../src/theme';
 
@@ -25,19 +29,40 @@ export default function Recuperar() {
   const [clave, setClave] = useState('');
   const [repetir, setRepetir] = useState('');
   const [enviado, setEnviado] = useState(false);
+  const [listo, setListo] = useState(false);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const pedirToken = () => {
+  const pedirToken = async () => {
+    if (busy) return;
     if (!identificador.trim()) {
       setError('Ingresá tu usuario o correo.');
       return;
     }
+    setBusy(true);
     setError('');
-    setEnviado(true);
-    setPaso(2);
+    try {
+      await postOlvidoClave(identificador.trim());
+      setEnviado(true);
+      setPaso(2);
+    } catch (err) {
+      setError(
+        apiErrorMessage(
+          err,
+          'No se pudo enviar el pedido. Revisá tu conexión e intentá de nuevo.',
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const restablecer = () => {
+  const restablecer = async () => {
+    if (busy) return;
+    if (!token.trim()) {
+      setError('Pegá el token que llegó a tu correo.');
+      return;
+    }
     if (clave.length < 12) {
       setError('La contraseña necesita mínimo 12 caracteres.');
       return;
@@ -46,8 +71,21 @@ export default function Recuperar() {
       setError('Las contraseñas no coinciden.');
       return;
     }
+    setBusy(true);
     setError('');
-    router.replace('/login');
+    try {
+      await postRestablecerClave(token.trim(), clave);
+      setListo(true);
+    } catch (err) {
+      setError(
+        apiErrorMessage(
+          err,
+          'El token no es válido o ya venció. Pedí uno nuevo desde el paso 1.',
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -74,7 +112,22 @@ export default function Recuperar() {
             </View>
           </View>
 
-          {paso === 1 && (
+          {listo ? (
+            <Card style={{ gap: space(2) }}>
+              <Text style={styles.ok}>Contraseña restablecida ✅</Text>
+              <Text style={[fonts.muted, { lineHeight: 20 }]}>
+                Ya podés iniciar sesión con tu clave nueva. Por seguridad se
+                cerraron las sesiones anteriores de tu cuenta.
+              </Text>
+              <PillButton
+                label="Ir al login"
+                withArrow
+                onPress={() => router.replace('/login')}
+              />
+            </Card>
+          ) : null}
+
+          {!listo && paso === 1 && (
             <Card>
               <Text style={fonts.h3}>1 · Pedí el token</Text>
               <Text style={[fonts.muted, { lineHeight: 20 }]}>
@@ -90,7 +143,11 @@ export default function Recuperar() {
                 onChangeText={setIdentificador}
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
-              <PillButton label="Enviar token" withArrow onPress={pedirToken} />
+              <PillButton
+                label={busy ? 'Enviando…' : 'Enviar token'}
+                withArrow
+                onPress={pedirToken}
+              />
               <PillButton
                 label="Volver al login"
                 variant="subtle"
@@ -99,7 +156,7 @@ export default function Recuperar() {
             </Card>
           )}
 
-          {paso === 2 && (
+          {!listo && paso === 2 && (
             <Card>
               <Text style={fonts.h3}>2 · Creá tu clave nueva</Text>
               <Text style={[fonts.muted, { lineHeight: 20 }]}>
@@ -111,7 +168,9 @@ export default function Recuperar() {
                 caracteres). Si no pediste este cambio, ignorá el mensaje.
               </Text>
               {enviado && !error ? (
-                <Text style={styles.ok}>Token enviado (simulado por ahora).</Text>
+                <Text style={styles.ok}>
+                  Pedido enviado: revisá tu correo para el token.
+                </Text>
               ) : null}
               <Field
                 label="Token del correo"
@@ -140,7 +199,7 @@ export default function Recuperar() {
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <PillButton
-                label="Restablecer contraseña"
+                label={busy ? 'Restableciendo…' : 'Restablecer contraseña'}
                 withArrow
                 onPress={restablecer}
               />

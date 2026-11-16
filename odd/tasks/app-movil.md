@@ -103,9 +103,9 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T2 | S9 | Capa API (`API_BASE`, cliente auth con token) | inline | **Hecho** (clientes mesas, inscripciones, notas, asistencias en `src/api.ts`) | 598d2b4 |
 | T3 | S8 | Pantallas de acceso: Login, Recuperar, Registro | inline | **Hecho** (iteración visual aplicada: mascot con máscara circular en acceso) | 598d2b4 |
 | T4 | S2,S8 | Navegación por roles (tabs alumno / tutor) | inline | **Hecho** | 598d2b4 |
-| T5 | S8 | Inicio + Inscripción (mesas) | inline | Esqueleto visual vacío; sin datos demo, sin cablear API (espera backend) | 598d2b4 |
-| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Esqueleto visual vacío; sin datos demo, sin `GET /notas` | 598d2b4 |
-| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Esqueleto visual vacío en Permisos; Perfil sin datos de backend | 598d2b4 |
+| T5 | S8 | Inicio + Inscripción (mesas) | inline | **Hecho**: `GET /mesas-disponibles` + `GET /mis-inscripciones` + `POST /inscripciones` cableados; demo/errores con estado claro | |
+| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Pendiente de backend: `GET /notas` no existe aún en el snapshot (va en el informe) | 598d2b4 |
+| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Parcial: cambiar clave y recuperar cableados a `auth/*`; Permisos espera endpoint; código tutor sigue local | |
 | T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | Notas y Asistencias en esqueleto visual vacío; sin datos de backend | 598d2b4 |
 | T9 | S2 | Quitar rastro de admin; menú solo según rol | inline | **Hecho** | 598d2b4 |
 | T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Pendiente | |
@@ -186,3 +186,22 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   movía) — ahora se leen vía refs + interpolación de translateX para el knob.
   Mascotas agregadas a pantallas que no tenían: Permisos (alumno) y Cambiar
   contraseña. `tsc --noEmit` limpio.
+- **L21** (2026-11-15, verbatim): "necesitos que sigamos con el pryecto de la
+  app cosa que sean para despues la dejamos para lo ultimo miestras se pueda
+  desarrolar la aplicion, quiero que sigas con las conexion de las api a al
+  backend con las cosas que tenemos, y lo demas queda para proximas conexion
+  cuando el colega nos provea de las nuevas actualizaciones de backend y base
+  de datos, mistra seguimos con lo que tenmos" + "has eso pero si cuelga
+  termina el proceso,y seguimos con otra cosa, antes no pasaba eso" (la copia
+  local de PostgreSQL se abortó: cluster portable crasheaba con 0xC0000142).
+  Hecho: contrato real del snapshot cableado — `login` (`{username, password,
+  modulo:'sigme_mobile'}` → `{access, refresh}`), roles vía `GET /auth/yo`,
+  `GET /mesas-disponibles`, `GET /mis-inscripciones`, `POST /inscripciones`
+  (`{materia_id, condicion_id}`), `GET /convocatoria-vigente`,
+  `POST /auth/olvido-clave`, `POST /auth/restablecer-clave`,
+  `POST /auth/cambiar-clave` (renueva el access). Corregido bug de contrato:
+  el login mandaba `{usuario, password}` y leía `access_token/roles/nombre`
+  (no existen). `API_BASE` movido a `src/config.ts` (evita ciclo auth↔api).
+  Sesión v2 con `access/refresh/roles/permisos`; demo solo si el backend no
+  responde. `tsc --noEmit` limpio; Expo web HTTP 200. Pendiente: Notas,
+  Permisos, tutor (endpoints nuevos del colega), tests T10 y APK T9.

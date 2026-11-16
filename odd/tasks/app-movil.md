@@ -225,3 +225,11 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   closures viejos) y `updateAccess` también usa el ref. 4 tests nuevos (19 en
   total); mutación que desactiva el reintento hace fallar 2 y se revierte.
   `npm test` 19/19 y `tsc --noEmit` limpio.
+- **L25** (2026-11-15): Inicio muestra la **convocatoria vigente**
+  (`GET /convocatoria-vigente`, hasta ahora el cliente lo tenía sin usar):
+  descripción, rango de fechas y badge Abierta/Cerrada, con aviso cuando está
+  cerrada. Si ese endpoint falla no se vacía la pantalla (las inscripciones
+  propias siguen visibles). +1 test (20 en total). Salud del proyecto
+  revisada: `compileall` + `import app.main` del snapshot OK, `.gitignore`
+  cubre `.env`/logs/`node_modules`, sin artefactos rastreados, y se pushearon
+  `feat/app-movil` y `main` (que tenía el snapshot del backend sin publicar).

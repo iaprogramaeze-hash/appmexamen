@@ -24,8 +24,10 @@ import { useAuth } from '../../src/auth';
 import {
   ApiError,
   apiErrorMessage,
+  fetchConvocatoriaVigente,
   fetchMesasDisponibles,
   fetchMisInscripciones,
+  type ConvocatoriaVigente,
   type MesaDisponible,
   type MisInscripcion,
 } from '../../src/api';
@@ -83,6 +85,7 @@ export default function Inicio() {
   const [anio, setAnio] = useState<number>(0);
   const [mesas, setMesas] = useState<MesaDisponible[]>([]);
   const [inscripciones, setInscripciones] = useState<MisInscripcion[]>([]);
+  const [convocatoria, setConvocatoria] = useState<ConvocatoriaVigente | null>(null);
   const [loading, setLoading] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState('');
@@ -92,6 +95,7 @@ export default function Inicio() {
     if (session.demo) {
       setMesas([]);
       setInscripciones([]);
+      setConvocatoria(null);
       setError('');
       return;
     }
@@ -103,9 +107,18 @@ export default function Inicio() {
       setMesas(tablas);
       setInscripciones(mias);
       setError('');
+
+      // The window is optional context: without one the student still sees
+      // their own enrollments, so a failure here never blanks the screen.
+      try {
+        setConvocatoria(await fetchConvocatoriaVigente(session.access));
+      } catch {
+        setConvocatoria(null);
+      }
     } catch (err) {
       setMesas([]);
       setInscripciones([]);
+      setConvocatoria(null);
       setError(mensajeDeError(err));
     }
   }, [session]);
@@ -172,6 +185,39 @@ export default function Inicio() {
           </View>
           <ProgressBar value={progreso} />
         </LinearGradient>
+
+        {convocatoria ? (
+          <Card style={{ gap: space(2) }}>
+            <View style={styles.convRow}>
+              <Text style={styles.cardTitle}>Convocatoria</Text>
+              <View
+                style={[
+                  styles.convBadge,
+                  convocatoria.activa ? styles.convOpen : styles.convClosed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.convBadgeText,
+                    convocatoria.activa ? styles.convOpenText : styles.convClosedText,
+                  ]}
+                >
+                  {convocatoria.activa ? 'Abierta' : 'Cerrada'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.materiaName}>{convocatoria.descripcion}</Text>
+            <Text style={fonts.muted}>
+              Inscripción del {formatFecha(convocatoria.fecha_inicio_inscripcion)} al{' '}
+              {formatFecha(convocatoria.fecha_fin_inscripcion)}
+            </Text>
+            {!convocatoria.activa ? (
+              <Text style={[fonts.muted, { lineHeight: 20 }]}>
+                La inscripción está cerrada. Podés consultar tus inscripciones abajo.
+              </Text>
+            ) : null}
+          </Card>
+        ) : null}
 
         {session?.demo ? (
           <Card style={{ gap: space(2) }}>
@@ -398,6 +444,33 @@ const styles = StyleSheet.create({
     color: '#4ADE80',
   },
   estadoTextAnulado: {
+    color: '#F87171',
+  },
+  convRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space(2),
+  },
+  convBadge: {
+    borderRadius: radii.pill,
+    paddingHorizontal: space(3),
+    paddingVertical: space(1.5),
+  },
+  convOpen: {
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+  },
+  convClosed: {
+    backgroundColor: 'rgba(248, 113, 113, 0.15)',
+  },
+  convBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  convOpenText: {
+    color: '#4ADE80',
+  },
+  convClosedText: {
     color: '#F87171',
   },
 });

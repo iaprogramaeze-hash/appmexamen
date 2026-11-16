@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   ApiError,
   apiErrorMessage,
+  fetchConvocatoriaVigente,
   fetchMisInscripciones,
   fetchMesasDisponibles,
   fetchYo,
@@ -126,6 +127,24 @@ describe('student queries', () => {
 
     expect(calls[0].url).toBe(`${API_BASE}/api/v1/mesas-disponibles`);
     expect(calls[0].init.method).toBe('GET');
+    expect(headersOf(calls[0]).Authorization).toBe('Bearer tok');
+  });
+
+  it('gets the current enrollment window', async () => {
+    const calls = mockFetch(200, {
+      id: 'c1',
+      descripcion: 'Diciembre 2026',
+      fecha_inicio_inscripcion: '2026-12-01',
+      fecha_fin_inscripcion: '2026-12-10',
+      activa: true,
+      estado: 'abierta',
+    });
+
+    const ventana = await fetchConvocatoriaVigente('tok');
+
+    expect(ventana.activa).toBe(true);
+    expect(ventana.fecha_fin_inscripcion).toBe('2026-12-10');
+    expect(calls[0].url).toBe(`${API_BASE}/api/v1/convocatoria-vigente`);
     expect(headersOf(calls[0]).Authorization).toBe('Bearer tok');
   });
 

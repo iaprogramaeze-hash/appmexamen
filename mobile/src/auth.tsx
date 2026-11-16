@@ -21,10 +21,18 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
-import { ApiError, apiErrorMessage, fetchYo, login as apiLogin } from './api';
+import {
+  ApiError,
+  apiErrorMessage,
+  fetchYo,
+  login as apiLogin,
+  refreshSession,
+  setRefreshHandler,
+} from './api';
 import { API_BASE } from './config';
 
 export { API_BASE };
@@ -55,6 +63,8 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Mirrors `session` for callbacks that must not carry a stale closure. */
+  const sessionRef = useRef<Session | null>(null);
 
   // Restore persisted session on boot.
   useEffect(() => {
@@ -64,14 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Session>;
           if (typeof parsed.access === 'string' && Array.isArray(parsed.roles)) {
-            setSession({
+            const restored: Session = {
               access: parsed.access,
               refresh: typeof parsed.refresh === 'string' ? parsed.refresh : '',
               usuario: typeof parsed.usuario === 'string' ? parsed.usuario : 'alumno',
               roles: parsed.roles,
               permisos: Array.isArray(parsed.permisos) ? parsed.permisos : [],
               demo: parsed.demo === true,
-            });
+            };
+            sessionRef.current = restored;
+            setSession(restored);
           }
         }
         // Drop the pre-contract session shape (token/usuario only).
@@ -85,10 +97,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persist = useCallback(async (s: Session | null) => {
+    sessionRef.current = s;
     setSession(s);
     if (s) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     else await AsyncStorage.removeItem(STORAGE_KEY);
   }, []);
+
+  // A 401 from any request triggers one refresh + retry (see `api.ts`).
+  useEffect(() => {
+    setRefreshHandler(async () => {
+      const current = sessionRef.current;
+      if (!current || current.demo || !current.refresh) return null;
+      try {
+        const pair = await refreshSession(current.refresh);
+        await persist({ ...current, access: pair.access, refresh: pair.refresh });
+        return pair.access;
+      } catch {
+        return null;
+      }
+    });
+    return () => setRefreshHandler(null);
+  }, [persist]);
 
   const signIn = useCallback<AuthState['signIn']>(
     async (usuario, password) => {
@@ -160,10 +189,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateAccess = useCallback(
     async (access: string) => {
-      if (!session) return;
-      await persist({ ...session, access });
+      const current = sessionRef.current;
+      if (!current) return;
+      await persist({ ...current, access });
     },
-    [session, persist],
+    [persist],
   );
 
   const value = useMemo(

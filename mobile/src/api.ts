@@ -103,10 +103,26 @@ type RequestOptions = {
   method?: string;
   body?: Json;
   token?: string;
+  /** Internal: a 401 is retried at most once, after a token refresh. */
+  retryOn401?: boolean;
 };
 
+/**
+ * Installed by `AuthProvider`: rotates the pair and returns the fresh access
+ * token, or `null` when the session cannot be recovered. Keeping it out of the
+ * module graph lets the API layer stay acyclic (auth imports api, not the
+ * other way round).
+ */
+type RefreshHandler = () => Promise<string | null>;
+
+let refreshHandler: RefreshHandler | null = null;
+
+export function setRefreshHandler(handler: RefreshHandler | null): void {
+  refreshHandler = handler;
+}
+
 async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token } = options;
+  const { method = 'GET', body, token, retryOn401 = true } = options;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -115,6 +131,13 @@ async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<
     headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
+
+  if (resp.status === 401 && token && retryOn401 && refreshHandler) {
+    const fresh = await refreshHandler();
+    if (fresh) {
+      return apiFetch<T>(path, { method, body, token: fresh, retryOn401: false });
+    }
+  }
 
   if (!resp.ok) {
     let parsed: unknown = null;

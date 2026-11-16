@@ -218,3 +218,10 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   (cambiar `modulo` en el login hace fallar el test) y GREEN tras revertir.
   `npm test` 15/15 y `tsc --noEmit` limpio. Nota: la corrección previa del doc
   con PowerShell lo re-codificó (mojibake); restaurado desde `83cca7c`.
+- **L24** (2026-11-15): sesión que expira — `api.ts` reintenta **una sola vez**
+  tras un `401` con token, pidiendo un access nuevo a un handler instalado con
+  `setRefreshHandler()` (mantiene el módulo sin ciclo con `auth`).
+  `AuthProvider` lo registra con `refreshSession()` + `sessionRef` (evita
+  closures viejos) y `updateAccess` también usa el ref. 4 tests nuevos (19 en
+  total); mutación que desactiva el reintento hace fallar 2 y se revierte.
+  `npm test` 19/19 y `tsc --noEmit` limpio.

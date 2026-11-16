@@ -19,6 +19,7 @@ import {
   postInscripcion,
   postOlvidoClave,
   postRestablecerClave,
+  setRefreshHandler,
 } from '../src/api';
 
 const API_BASE = 'http://localhost:8000';
@@ -47,8 +48,26 @@ function headersOf(call: Call): Record<string, string> {
   return call.init.headers as Record<string, string>;
 }
 
+function mockFetchSequence(responses: Array<{ status: number; payload?: unknown }>) {
+  const calls: Call[] = [];
+  let index = 0;
+  const fn = jest.fn(async (url: string, init: RequestInit) => {
+    calls.push({ url, init });
+    const next = responses[Math.min(index, responses.length - 1)];
+    index += 1;
+    return {
+      ok: next.status >= 200 && next.status < 300,
+      status: next.status,
+      json: async () => next.payload,
+    };
+  });
+  (globalThis as unknown as { fetch: typeof fn }).fetch = fn;
+  return calls;
+}
+
 beforeEach(() => {
   jest.restoreAllMocks();
+  setRefreshHandler(null);
 });
 
 describe('login', () => {
@@ -239,5 +258,52 @@ describe('error envelope', () => {
     expect(apiErrorMessage(new TypeError('Network request failed'), 'Sin conexión')).toBe(
       'Sin conexión',
     );
+  });
+});
+
+describe('session refresh on 401', () => {
+  it('retries once with the fresh access token', async () => {
+    const calls = mockFetchSequence([{ status: 401 }, { status: 200, payload: [] }]);
+    const handler = jest.fn<() => Promise<string | null>>(async () => 'fresh-token');
+    setRefreshHandler(handler);
+
+    await expect(fetchMesasDisponibles('expired')).resolves.toEqual([]);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(2);
+    expect(headersOf(calls[1]).Authorization).toBe('Bearer fresh-token');
+  });
+
+  it('surfaces the original 401 when the refresh fails', async () => {
+    const calls = mockFetchSequence([{ status: 401 }]);
+    setRefreshHandler(jest.fn<() => Promise<string | null>>(async () => null));
+
+    const err = await fetchMesasDisponibles('expired').catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(401);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('does not retry more than once', async () => {
+    const calls = mockFetchSequence([{ status: 401 }, { status: 401 }]);
+    setRefreshHandler(jest.fn<() => Promise<string | null>>(async () => 'fresh-token'));
+
+    await expect(fetchMesasDisponibles('expired')).rejects.toMatchObject({ status: 401 });
+
+    expect(calls).toHaveLength(2);
+  });
+
+  it('never refreshes a request that carries no token', async () => {
+    const calls = mockFetchSequence([
+      { status: 401, payload: { code: 'credenciales-invalidas', detail: 'Login failed' } },
+    ]);
+    const handler = jest.fn<() => Promise<string | null>>(async () => 'fresh-token');
+    setRefreshHandler(handler);
+
+    await expect(login('u', 'p')).rejects.toMatchObject({ status: 401 });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(1);
   });
 });

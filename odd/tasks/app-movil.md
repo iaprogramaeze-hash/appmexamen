@@ -180,7 +180,7 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
 | T16 | S13 | Permisos: listado real por condición (RB-18) + botón PDF pendiente | inline | **Hecho**: `permisoRules.ts` (5 tests RED→GREEN), `permisos.tsx` cableado a `fetchMisInscripciones` | |
 | T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho y corregido**: el usuario aclaró que plantilla/PDF son nuestros; §8 ya no pide endpoint ni comparte plantilla | |
-| T18 | S13 | Generación local del PDF del permiso (plantilla + pdf-lib) y botón activo | inline | **Hecho**: `permisoPdfRules.ts` + `permisoPdf.ts` + `permisoShare.ts` + `identidad.ts`; registro guarda nombre/DNI; botón descarga y comparte; 20 tests nuevos; suite 59/59 | pendiente commit |
+| T18 | S13 | Generación local del PDF del permiso (plantilla + pdf-lib) y botón activo | inline | **Hecho**: `permisoPdfRules.ts` + `permisoPdf.ts` + `permisoShare.ts` + `identidad.ts`; registro guarda nombre/DNI; botón descarga y comparte; 20 tests nuevos; suite 59/59 | 3f7596c |
 
 ---
 
@@ -426,11 +426,11 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   servidor). Dependencias: `pdf-lib`, `expo-asset`, `expo-file-system`,
   `expo-sharing`. Verificación: `tsc --noEmit` exit 0; `npm test` **59/59**
   (20 tests nuevos: reglas, generación sobre plantilla real, identidad).
-  **Risk: item 3 (contrato de datos del permiso depende de identidad local +
-  plantilla asset; cambios en el impreso o en `/mis-inscripciones` afectan a
-  consumidores de la app)** — sin embargo es añadido, no rompe API existente;
-  riesgo real contenedor: ninguno de los ítems de alto riesgo del diff
-  (no toca auth, BD, migraciones ni APIs públicas del backend).
+  Commit `3f7596c`. Assessment RDD: riesgo **medium**
+  (`executable_change` en tests), `review_due: false` → **under_budget**
+  (slice pendiente, sin review aún). **Risk: none** en el sentido de la
+  lista de alto riesgo del diff (no toca auth, BD, migraciones ni APIs
+  públicas del backend; es añadido en la app).
 
 ## Pendientes (2026-11-16)
 

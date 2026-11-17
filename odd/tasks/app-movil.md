@@ -136,6 +136,20 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 - Perfil muestra la tecnicatura y permite cambiarla (una sola).
 - Filtro de año de Inicio se aplica **encima** del filtro de tecnicatura.
 
+### S13 — Permisos: listado real + PDF pendiente — 2026-11-17
+- Usuario (verbatim, aceptación): "si" a "¿Seguamos con el permiso en PDF…?".
+- Decisión previa del usuario sobre el PDF: **lo generamos nosotros**; solo
+  SIGME se entera de la inscripción (materia + alumno); **no se persiste**
+  el permiso ni el archivo (RB-09).
+- Pantalla Permisos cableada a `GET /mis-inscripciones`: solo activas
+  (`estado !== 'anulado'`), agrupadas **por condición** (RB-18: una condición
+  → un permiso; mezcla → dos permisos). Cada grupo muestra materias con
+  fecha/hora + botón **"Descargar PDF"** deshabilitado (pendiente endpoint).
+- Referencia de generación para el colega: `tools/generar_permiso.py` +
+  plantilla `imagenes/Permiso de examen alumno 2026 - A4 - nuevo modelo.pdf`;
+  contrato propuesto en informe §8 (`GET /permiso-examen`, `Accept:
+  application/pdf`, dueño = sub del JWT, stateless).
+
 ---
 
 ## Tasks
@@ -157,6 +171,8 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T13 | S11 | Informe colega consolidado (reportes + pendientes de las pantallas) | docs | **Hecho**: `informes/informe-para-colega-pantallas-app.md` | |
 | T14 | S12 | Tecnicatura única en registro + filtro RB-02 en Inicio + Perfil | inline | **Hecho**: `tecnicaturaRules.ts` (7 tests RED→GREEN), `tecnicatura.ts` (AsyncStorage), registro exige y guarda, Inicio filtra, Perfil muestra/cambia | |
 | T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
+| T16 | S13 | Permisos: listado real por condición (RB-18) + botón PDF pendiente | inline | **Hecho**: `permisoRules.ts` (5 tests RED→GREEN), `permisos.tsx` cableado a `fetchMisInscripciones` | |
+| T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho** | |
 
 ---
 
@@ -375,6 +391,15 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   `__tests__/tecnicatura-rules.test.ts`); `tsc --noEmit` exit 0 y `npm test`
   34/34. Pendiente del colega (T15): persistir la tecnicatura en la cuenta y
   exponerla en `/auth/yo` para dejar de depender del storage local.
+
+- **L33** (2026-11-17, verbatim): "si" (aceptación a seguir con el permiso en
+  PDF). S13/T16-T17: pantalla Permisos cableada — `GET /mis-inscripciones`,
+  solo activas, agrupadas por condición (RB-18) con materias fecha/hora y
+  botón "Descargar PDF" deshabilitado. Reglas puras en `permisoRules.ts`
+  (RED→GREEN por mutación, 5 tests; suite completa 39/39). Informe §8:
+  contrato propuesto `GET /permiso-examen` + `Accept: application/pdf`,
+  dueño = sub del JWT, stateless, referencia `tools/generar_permiso.py` y
+  plantilla A4. `tsc --noEmit` exit 0.
 
 ## Pendientes (2026-11-16)
 

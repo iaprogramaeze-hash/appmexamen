@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../src/auth';
 import { Card, Field, PillButton, Screen } from '../src/components/ui';
 import { SlideToConfirm } from '../src/components/SlideToConfirm';
+import { etiquetaSlider, loginListo } from '../src/loginRules';
 import { colors, fonts, radii, space } from '../src/theme';
 
 export default function Login() {
@@ -30,17 +31,19 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const onSubmit = async () => {
-    if (busy) return;
+  // Returns false when the login failed, so the slider goes back to the start.
+  const onSubmit = async (): Promise<boolean> => {
+    if (busy) return false;
     setBusy(true);
     setError('');
     const res = await signIn(usuario, password);
     setBusy(false);
     if (!res.ok) {
       setError(res.error ?? 'No se pudo iniciar sesión.');
-      return;
+      return false;
     }
     router.replace('/');
+    return true;
   };
 
   return (
@@ -102,9 +105,9 @@ export default function Login() {
             </Pressable>
 
             <SlideToConfirm
-              label={busy ? 'Ingresando…' : 'Deslizá para iniciar sesión'}
+              label={etiquetaSlider(usuario, password, busy)}
               onConfirm={onSubmit}
-              disabled={busy}
+              disabled={busy || !loginListo(usuario, password)}
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
 

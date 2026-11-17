@@ -19,9 +19,16 @@ import {
 
 import { colors, gradientCta, radii } from '../theme';
 
+type ConfirmResult = boolean | void;
+
 type Props = {
   label: string;
-  onConfirm: () => void;
+  /**
+   * Runs when the knob reaches the end. Returning `false` (or throwing) means
+   * the action did not succeed, so the knob slides back for another attempt;
+   * `void`/`true` keeps the confirmed state as before.
+   */
+  onConfirm: () => ConfirmResult | Promise<ConfirmResult>;
   disabled?: boolean;
   style?: ViewStyle;
 };
@@ -54,6 +61,22 @@ export function SlideToConfirm({ label, onConfirm, disabled, style }: Props) {
     }).start();
   }, [dragX]);
 
+  // A failed action must leave the slider usable again.
+  const runConfirm = useCallback(async () => {
+    try {
+      const result = await onConfirmRef.current();
+      if (result === false) {
+        confirmedRef.current = false;
+        setConfirmed(false);
+        reset();
+      }
+    } catch {
+      confirmedRef.current = false;
+      setConfirmed(false);
+      reset();
+    }
+  }, [reset]);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
@@ -79,7 +102,7 @@ export function SlideToConfirm({ label, onConfirm, disabled, style }: Props) {
           }).start(() => {
             confirmedRef.current = true;
             setConfirmed(true);
-            onConfirmRef.current();
+            void runConfirm();
           });
         } else {
           reset();

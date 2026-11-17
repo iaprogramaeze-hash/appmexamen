@@ -103,12 +103,12 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T2 | S9 | Capa API (`API_BASE`, cliente auth con token) | inline | **Hecho** (clientes mesas, inscripciones, notas, asistencias en `src/api.ts`) | 598d2b4 |
 | T3 | S8 | Pantallas de acceso: Login, Recuperar, Registro | inline | **Hecho** (iteración visual aplicada: mascot con máscara circular en acceso) | 598d2b4 |
 | T4 | S2,S8 | Navegación por roles (tabs alumno / tutor) | inline | **Hecho** | 598d2b4 |
-| T5 | S8 | Inicio + Inscripción (mesas) | inline | **Hecho**: `GET /mesas-disponibles` + `GET /mis-inscripciones` + `POST /inscripciones` cableados; demo/errores con estado claro | |
+| T5 | S8 | Inicio + Inscripción (mesas) | inline | **Hecho**: `GET /mesas-disponibles` + `GET /mis-inscripciones` + `POST /inscripciones` + `GET /convocatoria-vigente` cableados (badge abierta/cerrada); marca "Inscripto" y evita reintentar una inscripción duplicada (6e4b264, 33fedcd, 3deb2e5) | 6e4b264+ |
 | T6 | S5,S6 | Pantalla Notas (alumno) | inline | Pendiente de backend: `GET /notas` no existe aún en el snapshot (va en el informe) | 598d2b4 |
 | T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Parcial: cambiar clave y recuperar cableados a `auth/*`; Permisos espera endpoint; código tutor sigue local | |
 | T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | Notas y Asistencias en esqueleto visual vacío; sin datos de backend | 598d2b4 |
 | T9 | S2 | Quitar rastro de admin; menú solo según rol | inline | **Hecho** | 598d2b4 |
-| T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Parcial: suite de contratos del cliente API (15 tests, `npm test`); UI y flujo end-to-end esperan backend/BD | |
+| T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Parcial: `npm test` 27/27 y `tsc --noEmit` exit 0 en `mobile/`; bundle Expo 200 OK; falta verificar el flujo login→inscripción con backend real y endpoints de notas/tutor del colega | |
 | T11 | S7 | Informe colega entregado (ya redactado) | docs | **Hecho** | 27f68c2 |
 
 ---
@@ -240,3 +240,68 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   y se corrigió la formatting rota del aviso de demo. `tsc`, 20 tests y bundle
   web OK. El push de `6e4b264` quedó **pendiente de autenticación**: el
   credential helper de Windows se cuelga pidiendo login (sin `gh` ni token).
+- **L27** (2026-11-16): verificación del "traslado" a disco `D:\mesas`. Hallazgos:
+  el traslado nunca ocurrió: `D:/mesas/.git` es un **worktree enlazado**
+  (`gitdir: D:/progamacion/app para inscrpcion a mesa/.git/worktrees/mesas`);
+  todo el historial y las ramas viven en el repo viejo, que NO se borra.
+  Restaurado el branch `feat/app-movil` en `D:/mesas` (estaba detached: el
+  mismo branch no puede estar en dos worktrees, se liberó en el viejo con
+  `git switch --detach`). Push de `3deb2e5` hecho tras fijar
+  `credential.username=iaprogramaeze-hash` (el push daba 403 porque GCM elegía
+  la cuenta vieja `formulariosepetn36-ai` aunque ya tiene ambas guardadas).
+  `backend/.venv` recreado en `D:/mesas` (Python 3.14.7, `pip install -e
+  ".[dev]"`): 290 tests pytest pasan. `.env` de la raíz (con
+  `DATABASE_URL`/claves JWT reales) copiado a la raíz y a `backend/` (ambos
+  cubiertos por `.gitignore`); `backend-epet-n36-main/` verificado idéntico al
+  `backend/` actual salvo 5 archivos más nuevos en el repo. Queda pendiente el
+  APK (no existe ninguno en disco).
+- **L28** (2026-11-16): dos arreglos del login pedidos por el usuario. (1) El
+  deslizador ya no se completa sin usuario y contraseña: reglas puras en
+  `mobile/src/loginRules.ts` (`loginListo` ignora whitespace, `etiquetaSlider`
+  informa qué falta), `SlideToConfirm` ahora acepta un `onConfirm` que devuelve
+  boolean y **resetea el knob** cuando devuelve `false` o lanza (los otros 4
+  usos siguen igual porque solo `false` resetea). RED→GREEN con
+  `mobile/__tests__/login-rules.test.ts` (7 tests); `npm test` 27/27 y
+  `tsc --noEmit` limpio. (2) La imagen del login tenía un damero gris pintado
+  **dentro** del PNG (fuera del círculo): se volvieron transparentes 88.329 px
+  con System.Drawing (formato final 32bpp ARGB, 276 KB → 95 KB). Gotcha: GDI+
+  guarda el PNG en 24bpp y pierde el alfa si el bitmap se cargó desde el mismo
+  archivo; hay que crear el destino en `Format32bppArgb`, dibujar encima y
+  guardar a un temporal antes de reemplazar. Metro quedó corriendo en
+  `exp://192.168.1.8:8081` (backend apagado, modo demo). (3) El damero salió
+  también de las otras 3 mascotas (`mesas-examen`, `calificaciones`,
+  `asistencia`): script Python/Pillow con flood-fill desde los bordes (regla
+  gris neutro: `max-min <= 14 y 95 <= max <= 185`), verificado con lectura
+  visual — 108.216 / 110.269 / 155.809 px transparentes, dibujo intacto.
+  Gotcha: PowerShell rompe con `@($x - 1, $y)` (parser lo lee como resta de
+  arrays); usar Python, no GDI+.
+
+- **L29** (2026-11-17): análisis completo del proyecto pedido por el usuario
+  ("si se bloquea sigue al siguiente y soluciona lo que está mal"). Verde:
+  `tsc` exit 0, `npm test` 27/27, backend **290/290** pytest (hay que correrlo
+  con workdir `backend/`; desde la raíz del repo da 243 errors — falso
+  negativo de imports), bundle Expo 200 OK en 24 s, rama `feat/app-movil`
+  sincronizada. Commits de esta tanda: `d273f63` (gate de login) y `2658955`
+  (damero de las 4 mascotas). Backend levantado en `0.0.0.0:8000` (uvicorn
+  pid 1840) para conectar el frontend después. Sin APK en disco (salteado:
+  requiere Android SDK).
+
+## Pendientes (2026-11-16)
+
+**Nosotros (mobile):**
+- [ ] Build del APK: no existe ningún `.apk` en disco. En `mobile/android/`
+  quedaron artefactos de builds anteriores (`.cxx/`, `build/intermediates`) sin
+  salida final; revisar por qué no terminó (JDK/SDK o `npx expo run:android`).
+- [ ] Verificación manual en Expo Go: login → convocatoria → inscripción.
+- [ ] Decidir si `D:/mesas` pasa a ser el repo real (mover `.git`) o si se
+  sigue trabajando sobre el worktree con el repo viejo como almacén.
+
+**Bloqueado por el colega (backend/BD, informe T11 ya entregado):**
+- [ ] `GET /notas` (alumno) → pantalla Notas (T6).
+- [ ] `GET /tutor/alumnos/{id}/notas` y `.../asistencias` (T8).
+- [ ] Vínculo tutor↔alumno por código del alumno: alta + vínculo + aceptación (S4).
+- [ ] Endpoint de Permisos (listado/PDF) (T7).
+
+**Cierre (Paso 6, cuando todo funcione):**
+- [ ] Push a `original` (`formulariosepetn36-ai/appmexamen`) — hoy requiere
+  credenciales de esa cuenta.

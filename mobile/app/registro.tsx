@@ -17,6 +17,8 @@ import {
 
 import { Card, Chip, Field, PillButton, Screen } from '../src/components/ui';
 import { SlideToConfirm } from '../src/components/SlideToConfirm';
+import { guardarTecnicatura } from '../src/tecnicatura';
+import { TECNICATURAS } from '../src/tecnicaturaRules';
 import { colors, fonts, radii, space } from '../src/theme';
 
 type Paso = 1 | 2 | 3;
@@ -34,6 +36,7 @@ export default function Registro() {
     password: '',
     repetir: '',
     codigo: '',
+    tecnicatura: '',
   });
 
   const set = (k: keyof typeof form) => (v: string) =>
@@ -44,10 +47,23 @@ export default function Registro() {
     if (!form.nombre.trim() || !form.apellido.trim()) return 'Ingresá nombre y apellido.';
     if (!form.dni.trim()) return 'El D.N.I. es obligatorio (uno por cuenta).';
     if (!form.email.includes('@')) return 'Ingresá un correo válido.';
+    if (rol === 'alumno' && !form.tecnicatura)
+      return 'Elegí tu tecnicatura (una sola por alumno).';
     if (form.password.length < 12) return 'La contraseña necesita mínimo 12 caracteres.';
     if (form.password !== form.repetir) return 'Las contraseñas no coinciden.';
     return '';
   })();
+
+  /** Persists the one tecnicatura (RB-02) before moving to email check. */
+  const confirmarPaso1 = async (): Promise<boolean> => {
+    if (errorForm) return false;
+    if (rol === 'alumno') {
+      const ok = await guardarTecnicatura(form.tecnicatura);
+      if (!ok) return false;
+    }
+    setPaso(2);
+    return true;
+  };
 
   return (
     <Screen>
@@ -131,6 +147,26 @@ export default function Registro() {
                 value={form.telefono}
                 onChangeText={set('telefono')}
               />
+
+              {rol === 'alumno' ? (
+                <View style={{ gap: space(2) }}>
+                  <Text style={styles.label}>Tecnicatura (una sola)</Text>
+                  <View style={styles.roleRow}>
+                    {TECNICATURAS.map((t) => (
+                      <Chip
+                        key={t}
+                        label={t}
+                        active={form.tecnicatura === t}
+                        onPress={() => set('tecnicatura')(t)}
+                      />
+                    ))}
+                  </View>
+                  <Text style={[fonts.muted, { fontSize: 12 }]}>
+                    Solo verás mesas de esta tecnicatura (RB-02).
+                  </Text>
+                </View>
+              ) : null}
+
               <Field
                 label="Contraseña"
                 icon="lock-closed-outline"
@@ -152,7 +188,7 @@ export default function Registro() {
 
               <SlideToConfirm
                 label="Deslizá para crear cuenta"
-                onConfirm={() => setPaso(2)}
+                onConfirm={confirmarPaso1}
                 disabled={!!errorForm}
               />
               <Text style={[fonts.muted, { textAlign: 'center' }]}>

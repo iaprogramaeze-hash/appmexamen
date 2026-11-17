@@ -39,6 +39,8 @@ import {
   ProgressBar,
   Screen,
 } from '../../src/components/ui';
+import { leerTecnicatura } from '../../src/tecnicatura';
+import { filtraMesasPorTecnicatura } from '../../src/tecnicaturaRules';
 import { colors, fonts, gradientPurple, radii, space } from '../../src/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -86,11 +88,14 @@ export default function Inicio() {
   const [mesas, setMesas] = useState<MesaDisponible[]>([]);
   const [inscripciones, setInscripciones] = useState<MisInscripcion[]>([]);
   const [convocatoria, setConvocatoria] = useState<ConvocatoriaVigente | null>(null);
+  const [tecnicatura, setTecnicatura] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState('');
 
   const cargar = useCallback(async () => {
+    const tec = await leerTecnicatura();
+    setTecnicatura(tec);
     if (!session) return;
     if (session.demo) {
       setMesas([]);
@@ -142,9 +147,12 @@ export default function Inicio() {
     setRefrescando(false);
   };
 
-  const visibles = anio === 0 ? mesas : mesas.filter((m) => anioDe(m.curso_nombre) === anio);
+  // RB-02: only tables of the student's own tecnicatura.
+  const propias = filtraMesasPorTecnicatura(mesas, tecnicatura);
+  const visibles =
+    anio === 0 ? propias : propias.filter((m) => anioDe(m.curso_nombre) === anio);
   const inscriptas = inscripciones.filter((i) => i.estado !== 'anulado');
-  const total = mesas.length;
+  const total = propias.length;
   const progreso = total > 0 ? inscriptas.length / total : 0;
 
   return (
@@ -178,7 +186,7 @@ export default function Inicio() {
                 Inscripción {Math.round(progreso * 100)}%
               </Text>
               <Text style={styles.levelSub}>
-                {inscriptas.length} de {total} mesas disponibles
+                {inscriptas.length} de {total} mesas de tu tecnicatura
               </Text>
             </View>
             <Text style={{ fontSize: 28 }}>🎓</Text>
@@ -250,10 +258,23 @@ export default function Inicio() {
             <Text style={[fonts.muted, { textAlign: 'center' }]}>
               {loading
                 ? 'Cargando mesas…'
-                : total === 0
-                  ? 'No hay mesas publicadas en la convocatoria vigente.'
-                  : 'Elegí una mesa para ver el detalle e inscribirte.'}
+                : !tecnicatura
+                  ? 'Elegí tu tecnicatura en el registro o el perfil para ver tus mesas.'
+                  : total === 0
+                    ? 'No hay mesas de tu tecnicatura en la convocatoria vigente.'
+                    : 'Elegí una mesa para ver el detalle e inscribirte.'}
             </Text>
+            {tecnicatura ? (
+              <View style={styles.tecBadge}>
+                <Text style={styles.tecBadgeText}>{tecnicatura}</Text>
+              </View>
+            ) : (
+              <PillButton
+                label="Elegir tecnicatura"
+                variant="ghost"
+                onPress={() => router.push('/(alumno)/perfil')}
+              />
+            )}
           </Card>
         ) : null}
 
@@ -416,6 +437,21 @@ const styles = StyleSheet.create({
   chipRow: {
     gap: space(2),
     paddingVertical: space(1),
+  },
+  tecBadge: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(186, 152, 242, 0.2)',
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.purple,
+    paddingHorizontal: space(3),
+    paddingVertical: space(1.5),
+  },
+  tecBadgeText: {
+    color: colors.purpleDeep,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   materiaRow: {
     flexDirection: 'row',

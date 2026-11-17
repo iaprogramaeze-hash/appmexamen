@@ -114,6 +114,28 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   (`reporte.exportar`, hoy solo staff del backend) se pide al colega en el
   informe T13.
 
+### S12 — Tecnicatura única del alumno y filtro RB-02 — 2026-11-17
+- Usuario (verbatim): "la parte de incripcion,listado de materias para mesa de
+  examen que esten hablitadas para rendicada una corresponditen a la tecnicatura
+  ya especificada en la creacion del usuario, el alumno se incribe …" +
+  "una vez que crea el usaurio el alumno, especifica todos sus datos y
+  tecnicatura" + "un alumno solo puede tener una tecnicatura".
+- RB-02 (`docs/diseno.md`): el alumno solo se inscribe en materias **de su
+  propia tecnicatura**; una sola por alumno.
+- El registro (paso 1, solo rol alumno) **exige** elegir una de las dos
+  tecnicaturas oficiales del catálogo (nombres exactos del seed):
+  `TECNOLOGÍA DE LOS ALIMENTOS` | `GESTIÓN ORGANIZACIONAL`.
+- La elección se guarda en el dispositivo (`AsyncStorage`
+  `perfil.tecnicatura.v1`) porque el snapshot de backend **no** persiste ni
+  expone la tecnicatura (`GET /auth/yo` no la trae; `POST /auth/registro` no
+  existe). Se pide al colega en el informe T15.
+- `GET /mesas-disponibles` devuelve todas las mesas con `orientacion_nombre`;
+  la app **filtra en cliente** con igualdad exacta sobre ese snapshot
+  (`filtraMesasPorTecnicatura`). Sin tecnicatura → lista vacía + CTA (nunca
+  muestra otra carrera).
+- Perfil muestra la tecnicatura y permite cambiarla (una sola).
+- Filtro de año de Inicio se aplica **encima** del filtro de tecnicatura.
+
 ---
 
 ## Tasks
@@ -133,6 +155,8 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T11 | S7 | Informe colega entregado (ya redactado) | docs | **Hecho** | 27f68c2 |
 | T12 | S11 | Pantalla Reportes (esqueleto) + pestaña grupo alumno | inline | **Hecho**: `app/(alumno)/reportes.tsx` + pestaña en `_layout.tsx` (sin llamadas API) | |
 | T13 | S11 | Informe colega consolidado (reportes + pendientes de las pantallas) | docs | **Hecho**: `informes/informe-para-colega-pantallas-app.md` | |
+| T14 | S12 | Tecnicatura única en registro + filtro RB-02 en Inicio + Perfil | inline | **Hecho**: `tecnicaturaRules.ts` (7 tests RED→GREEN), `tecnicatura.ts` (AsyncStorage), registro exige y guarda, Inicio filtra, Perfil muestra/cambia | |
+| T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
 
 ---
 
@@ -334,6 +358,23 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   exit 0 y `npm test` 27/27 en `mobile/`. Commit `a60e679`; assessment RDD
   nativo: riesgo **medium** (`executable_change` en `_layout.tsx`),
   `review_due: false` → **under_budget** (slice pendiente, sin review aún).
+
+- **L32** (2026-11-17, verbatim): "la parte de incripcion,listado de materias
+  para mesa de examen que esten hablitadas para rendicada una corresponditen a
+  la tecnicatura ya especificada en la creacion del usuario, el alumno se
+  incribe …" + "cualquier duda me consultas y vamos armando" + "una vez que crea
+  el usaurio el alumno, especifica todos sus datos y tecnicatura" + "un alumno
+  solo puede tener una tecnicatura". Bloqueo resuelto preguntando de dónde sale
+  la tecnicatura: **en el registro**. S12/T14: una sola tecnicatura por alumno
+  (RB-02), exigida en el paso 1 del registro (rol alumno), guardada en
+  `AsyncStorage` (`perfil.tecnicatura.v1`) y filtrada en Inicio contra
+  `orientacion_nombre` de cada mesa (igualdad exacta; sin tecnicatura → lista
+  vacía + CTA, nunca otra carrera). Perfil la muestra y permite cambiarla.
+  Catálogo fijo de 2 con los nombres del seed (`TECNICATURAS` en
+  `tecnicaturaRules.ts`). RED→GREEN con mutación (7 tests en
+  `__tests__/tecnicatura-rules.test.ts`); `tsc --noEmit` exit 0 y `npm test`
+  34/34. Pendiente del colega (T15): persistir la tecnicatura en la cuenta y
+  exponerla en `/auth/yo` para dejar de depender del storage local.
 
 ## Pendientes (2026-11-16)
 

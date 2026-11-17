@@ -14,7 +14,9 @@ import {
 } from 'react-native';
 
 import { useAuth } from '../../src/auth';
-import { Card, PillButton, Screen } from '../../src/components/ui';
+import { Card, Chip, PillButton, Screen } from '../../src/components/ui';
+import { guardarTecnicatura, leerTecnicatura } from '../../src/tecnicatura';
+import { TECNICATURAS } from '../../src/tecnicaturaRules';
 import { colors, fonts, radii, space } from '../../src/theme';
 
 /** Generates a short human-readable link code (like K7M-2QX). */
@@ -31,6 +33,23 @@ export default function PerfilAlumno() {
   const { session, signOut } = useAuth();
   const [codigo, setCodigo] = useState<string | null>(null);
   const [restante, setRestante] = useState(0);
+  const [tecnicatura, setTecnicatura] = useState<string | null>(null);
+
+  // Load the one tecnicatura stored on this device (RB-02).
+  useEffect(() => {
+    let activo = true;
+    leerTecnicatura().then((t) => {
+      if (activo) setTecnicatura(t);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const elegirTecnicatura = async (t: string) => {
+    const ok = await guardarTecnicatura(t);
+    if (ok) setTecnicatura(t);
+  };
 
   // Countdown for the link code lifetime (10 min, S4 / informe §3.3).
   useEffect(() => {
@@ -69,11 +88,29 @@ export default function PerfilAlumno() {
           <Row label="Nombre" value={session?.usuario ?? '—'} />
           <Row label="Tipo" value="Alumno" />
           <Row label="Roles" value={session?.roles.join(', ') ?? 'alumno'} />
+          <Row label="Tecnicatura" value={tecnicatura ?? 'Sin elegir'} />
           {session?.demo ? (
             <Text style={styles.demoNote}>
               Sesión de demostración (el backend no está conectado).
             </Text>
           ) : null}
+        </Card>
+
+        <Card style={{ gap: space(3) }}>
+          <Text style={fonts.h3}>Tecnicatura</Text>
+          <Text style={[fonts.muted, { lineHeight: 20 }]}>
+            Una sola por alumno. Solo ves mesas de esta tecnicatura (RB-02).
+          </Text>
+          <View style={styles.roleRow}>
+            {TECNICATURAS.map((t) => (
+              <Chip
+                key={t}
+                label={t}
+                active={tecnicatura === t}
+                onPress={() => elegirTecnicatura(t)}
+              />
+            ))}
+          </View>
         </Card>
 
         <Card style={{ gap: space(3) }}>
@@ -185,5 +222,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: radii.pill,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: space(2),
+    flexWrap: 'wrap',
   },
 });

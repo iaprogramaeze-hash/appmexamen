@@ -2,7 +2,7 @@
 
 **Para:** equipo backend (`backend-epet-n36`)
 **De:** equipo frontend (app móvil `appmexamen`)
-**Fecha:** 2026-11-16
+**Fecha:** 2026-11-16 (§7 tecnicatura: 2026-11-17)
 **Motivo:** la app móvil agrega la pantalla de **Reportes** (listado +
 generación de reportes de inscripción a mesa). Consolidamos además los
 endpoints que seguimos necesitando para las demás pantallas. Nosotros **no
@@ -18,6 +18,7 @@ Contratos detallados de tutor/notas/asistencias/vínculo:
 
 | Tema | Qué pedimos | Quién |
 |---|---|---|
+| Tecnicatura del alumno (RB-02) | Persistir **una** tecnicatura en la cuenta y exponerla en `/auth/yo` (§7) | Uds |
 | Reportes en la app | Definir **quién** genera reportes desde la app y **qué endpoint** usa (§2) | **Decisión suya** |
 | Formato de reportes | Hoy el snapshot devuelve JSON; ¿la app renderiza JSON o agregan export a PDF? | **Decisión suya** |
 | Historial de reportes | Si esperan listado persistente, hace falta `GET /reportes` (§2.3) | Uds |
@@ -127,6 +128,7 @@ resumen:
 - [ ] Si aplica historial: `GET /reportes`
 - [ ] Si es (a): módulo `sigme_mobile` + `reporte.exportar` en el rol staff
 - [ ] Los pendientes de §4
+- [ ] **§7:** persistir tecnicatura del alumno y exponerla en `/auth/yo`
 - [ ] Nos avisan los contratos finales (o si cambia alguno)
 
 ---
@@ -140,6 +142,65 @@ resumen:
 3. Los pendientes de §4 siguen con las pantallas en esqueleto esperando.
 4. Cualquier cambio de contrato, lo re-emitimos por informe nuevo o por
    comentario en este mismo archivo.
+
+---
+
+## 7. Tecnicatura del alumno (RB-02) — pedido nuevo (2026-11-17)
+
+**Regla (nuestra, `docs/diseno.md` RB-02):** el alumno solo se inscribe en
+materias **de su propia tecnicatura**; **una sola** tecnicatura por alumno.
+
+### 7.1 Qué ya hace la app
+
+- El **registro** (rol alumno) exige elegir una de las dos tecnicaturas
+  oficiales del catálogo (nombres exactos del seed de `es_orientacion`):
+  - `TECNOLOGÍA DE LOS ALIMENTOS`
+  - `GESTIÓN ORGANIZACIONAL`
+- La elección se guarda **en el dispositivo** (`AsyncStorage`) y la pantalla
+  Inicio **filtra en cliente** `GET /mesas-disponibles` por igualdad exacta
+  sobre `orientacion_nombre`. Sin tecnicatura: lista vacía + aviso (nunca
+  muestra mesas de otra carrera).
+
+### 7.2 Por qué no alcanza hoy
+
+El snapshot **no tiene** vínculo alumno → tecnicatura:
+
+- `POST /auth/registro` **no existe** en `features/auth` (el registro de la
+  app aún no llama al backend).
+- `GET /auth/yo` devuelve solo `id`, `username`, `roles`, `permisos`,
+  `modulos` — **sin** orientación/tecnicatura.
+- `es_alumno.orientacion_id` está en el modelo adaptado
+  (`docs/modelo/prototipo-bd-adaptado.txt`) pero **no** en el DDL implementado
+  en `backend/`.
+- `GET /orientaciones` existe pero exige módulo `sigme_web` (no lo puede usar
+  el alumno).
+
+Mientras eso no exista, la app depende del storage local: si el alumno cambia
+de celular o reinstala, pierde la tecnicatura hasta volver a elegirla en
+Perfil.
+
+### 7.3 Qué pedimos (contrato mínimo — lo ajustan ustedes)
+
+1. **Persistir una tecnicatura por cuenta** en el alta del alumno (o en la
+   aprobación de la cuenta en SIGME), con las 2 valores del catálogo.
+2. **Exponerla al alumno**, por ejemplo agregando a `GET /auth/yo`:
+
+   ```json
+   {
+     "id": "…",
+     "username": "…",
+     "roles": ["alumno"],
+     "permisos": ["inscripcion.crear"],
+     "modulos": ["sigme_mobile"],
+     "tecnicatura": "TECNOLOGÍA DE LOS ALIMENTOS"
+   }
+   ```
+
+   (o un `GET /auth/yo/tecnicatura` / campo en un futuro `GET /perfil` — la
+   app lee lo que ustedes definan y deja de usar el storage local).
+3. **Opcional (mejor RB-02 server-side):** filtrar
+   `GET /mesas-disponibles` por la tecnicatura del dueño de la sesión, para
+   que el filtro no dependa del cliente.
 
 **Contacto:** por este repo (`appmexamen`) o el canal que ya usemos para el
 flujo de recuperación de clave.

@@ -5,15 +5,27 @@
  * one permiso per condition; mixed conditions → two permisos). The PDF is
  * generated on-device with our school template (not the backend; the
  * colleague only provides the enrolled subjects via `GET /mis-inscripciones`).
+ * RB-09: the file is never uploaded or stored on a server.
  */
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../../src/auth';
-import { ApiError, apiErrorMessage, fetchMisInscripciones, type MisInscripcion } from '../../src/api';
+import {
+  ApiError,
+  apiErrorMessage,
+  fetchMesasDisponibles,
+  fetchMisInscripciones,
+  type MisInscripcion,
+} from '../../src/api';
 import { Card, PillButton, Screen } from '../../src/components/ui';
-import { agrupaPorCondicion } from '../../src/permisoRules';
+import { leerIdentidad, formatoAlumnoImpreso } from '../../src/identidad';
+import { leerTecnicatura } from '../../src/tecnicatura';
+import { agrupaPorCondicion, type GrupoPermiso } from '../../src/permisoRules';
+import { generarPermisoPdf } from '../../src/permisoPdf';
+import { resolverAnio } from '../../src/permisoPdfRules';
+import { cargarPlantillaPermiso, compartirPdf } from '../../src/permisoShare';
 import { colors, fonts, radii, space } from '../../src/theme';
 
 /** "2026-12-15" -> "15/12". */
@@ -27,12 +39,25 @@ function formatHora(hora: string | null): string {
   return hora ? hora.slice(0, 5) : '—';
 }
 
+function slugCondicion(condicion: string): string {
+  return (
+    condicion
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'permiso'
+  );
+}
+
 export default function Permisos() {
   const { session } = useAuth();
   const [inscripciones, setInscripciones] = useState<MisInscripcion[]>([]);
   const [loading, setLoading] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState('');
+  const [descargando, setDescargando] = useState<string | null>(null);
+  const [avisoPdf, setAvisoPdf] = useState('');
 
   const cargar = useCallback(async () => {
     if (!session) return;
@@ -71,6 +96,56 @@ export default function Permisos() {
     setRefrescando(false);
   };
 
+  /** Builds the permit PDF locally and opens the share sheet (RB-09). */
+  const descargarPdf = async (grupo: GrupoPermiso) => {
+    if (descargando) return;
+    setDescargando(grupo.condicion);
+    setAvisoPdf('');
+    try {
+      const identidad = await leerIdentidad();
+      const carrera = await leerTecnicatura();
+      if (!identidad || !carrera) {
+        setAvisoPdf(
+          'Faltan datos del permiso. Completá nombre, D.N.I. y tecnicatura en tu perfil (o creá la cuenta de nuevo).',
+        );
+        return;
+      }
+
+      let anio = '';
+      if (session && !session.demo) {
+        try {
+          const mesas = await fetchMesasDisponibles(session.access);
+          anio = resolverAnio(grupo.items, mesas);
+        } catch {
+          // Year is optional: the form still prints without the number.
+        }
+      }
+
+      const plantilla = await cargarPlantillaPermiso();
+      const bytes = await generarPermisoPdf(
+        {
+          alumno: formatoAlumnoImpreso(identidad),
+          dni: identidad.dni,
+          condicion: grupo.condicion,
+          carrera,
+          anio,
+          materias: grupo.items.map((i) => ({
+            nombre: i.materia_nombre,
+            fecha: i.fecha,
+          })),
+        },
+        plantilla,
+      );
+      await compartirPdf(bytes, `permiso-${slugCondicion(grupo.condicion)}.pdf`);
+      setAvisoPdf('PDF listo para compartir o guardar.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo generar el PDF.';
+      setAvisoPdf(msg);
+    } finally {
+      setDescargando(null);
+    }
+  };
+
   const grupos = agrupaPorCondicion(inscripciones);
 
   return (
@@ -91,6 +166,12 @@ export default function Permisos() {
             <Text style={styles.errorTitle}>No se pudieron cargar los permisos</Text>
             <Text style={[fonts.muted, { lineHeight: 20 }]}>{error}</Text>
             <PillButton label="Reintentar" variant="ghost" onPress={refrescar} />
+          </Card>
+        ) : null}
+
+        {avisoPdf ? (
+          <Card style={{ gap: space(2) }}>
+            <Text style={[fonts.muted, { lineHeight: 20 }]}>{avisoPdf}</Text>
           </Card>
         ) : null}
 
@@ -135,7 +216,16 @@ export default function Permisos() {
                 </View>
               </View>
             ))}
-            <PillButton label="Descargar PDF del permiso" withArrow disabled />
+            <PillButton
+              label={
+                descargando === g.condicion
+                  ? 'Generando PDF…'
+                  : 'Descargar PDF del permiso'
+              }
+              withArrow
+              disabled={descargando !== null}
+              onPress={() => descargarPdf(g)}
+            />
             <Text style={[fonts.muted, { textAlign: 'center', fontSize: 12 }]}>
               El PDF se genera en tu celular con la plantilla de la escuela
               (no se guarda en el servidor).

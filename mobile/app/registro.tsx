@@ -17,6 +17,7 @@ import {
 
 import { Card, Chip, Field, PillButton, Screen } from '../src/components/ui';
 import { SlideToConfirm } from '../src/components/SlideToConfirm';
+import { guardarIdentidad } from '../src/identidad';
 import { guardarTecnicatura } from '../src/tecnicatura';
 import { TECNICATURAS } from '../src/tecnicaturaRules';
 import { colors, fonts, radii, space } from '../src/theme';
@@ -54,12 +55,17 @@ export default function Registro() {
     return '';
   })();
 
-  /** Persists the one tecnicatura (RB-02) before moving to email check. */
+  /** Persists identity + one tecnicatura (RB-02) before email check. */
   const confirmarPaso1 = async (): Promise<boolean> => {
     if (errorForm) return false;
     if (rol === 'alumno') {
+      const identidadOk = await guardarIdentidad({
+        nombre: form.nombre,
+        apellido: form.apellido,
+        dni: form.dni,
+      });
       const ok = await guardarTecnicatura(form.tecnicatura);
-      if (!ok) return false;
+      if (!identidadOk || !ok) return false;
     }
     setPaso(2);
     return true;

@@ -63,8 +63,9 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   `auth/*` ya probados en el prototipo.
 - Inicio + Inscripción: `GET /mesas-disponibles` + `POST /inscripciones`
   (flujo ya validado en prototipo).
-- Permisos: vista de permisos de examen (PDF cuando backend lo exponga;
-  por ahora lectura del listado).
+- Permisos: vista de permisos de examen con **PDF generado en el dispositivo**
+  sobre nuestra plantilla (S13); el colega solo aporta las materias
+  inscriptas (`GET /mis-inscripciones`).
 - Perfil: datos read-only, cambiar clave, cerrar sesión, **generar código de
   tutor** (S4).
 
@@ -179,6 +180,7 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
 | T16 | S13 | Permisos: listado real por condición (RB-18) + botón PDF pendiente | inline | **Hecho**: `permisoRules.ts` (5 tests RED→GREEN), `permisos.tsx` cableado a `fetchMisInscripciones` | |
 | T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho y corregido**: el usuario aclaró que plantilla/PDF son nuestros; §8 ya no pide endpoint ni comparte plantilla | |
+| T18 | S13 | Generación local del PDF del permiso (plantilla + pdf-lib) y botón activo | inline | **Hecho**: `permisoPdfRules.ts` + `permisoPdf.ts` + `permisoShare.ts` + `identidad.ts`; registro guarda nombre/DNI; botón descarga y comparte; 20 tests nuevos; suite 59/59 | pendiente commit |
 
 ---
 
@@ -412,6 +414,23 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   comparte la plantilla; solo importa `GET /mis-inscripciones` (materias
   inscriptas), que ya está cableado. El PDF se genera de nuestro lado (app);
   el botón sigue pendiente de la generación local con la plantilla nuestra.
+- **L35** (2026-11-17): T18 — generación local del PDF en la app. Port de
+  `tools/generar_permiso.py` a TypeScript con `pdf-lib` sobre
+  `mobile/assets/permiso-plantilla.pdf` (copia de la plantilla de la escuela;
+  no se comparte con el colega). Reglas puras en `permisoPdfRules.ts`
+  (mapeo de condiciones al impreso, RB-13, fechas, año desde mesas) y
+  armado en `permisoPdf.ts` (blanqueo de bandas fijas + overlay). Identidad
+  (nombre/apellido/DNI) se guarda en el registro (`perfil.identidad.v1`) porque
+  `/auth/yo` no los trae. Botón **Descargar PDF** activo: genera bytes,
+  escribe en caché y abre `expo-sharing` (RB-09: nada se sube ni persiste en
+  servidor). Dependencias: `pdf-lib`, `expo-asset`, `expo-file-system`,
+  `expo-sharing`. Verificación: `tsc --noEmit` exit 0; `npm test` **59/59**
+  (20 tests nuevos: reglas, generación sobre plantilla real, identidad).
+  **Risk: item 3 (contrato de datos del permiso depende de identidad local +
+  plantilla asset; cambios en el impreso o en `/mis-inscripciones` afectan a
+  consumidores de la app)** — sin embargo es añadido, no rompe API existente;
+  riesgo real contenedor: ninguno de los ítems de alto riesgo del diff
+  (no toca auth, BD, migraciones ni APIs públicas del backend).
 
 ## Pendientes (2026-11-16)
 

@@ -330,8 +330,10 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   verifica los 5 endpoints `reportes/*` del snapshot (gate
   `reporte.exportar`, JSON), pide decisión (a)/(b)/(c) de quién genera
   reportes en la app, formato JSON/PDF, historial, módulo `sigme_mobile` para
-  staff, y reitera los pendientes del informe T11. Verificación: `tsc --noEmit`
-  exit 0 y `npm test` 27/27 en `mobile/`.
+  staff, y   reitera los pendientes del informe T11. Verificación: `tsc --noEmit`
+  exit 0 y `npm test` 27/27 en `mobile/`. Commit `a60e679`; assessment RDD
+  nativo: riesgo **medium** (`executable_change` en `_layout.tsx`),
+  `review_due: false` → **under_budget** (slice pendiente, sin review aún).
 
 ## Pendientes (2026-11-16)
 

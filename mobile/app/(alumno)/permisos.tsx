@@ -2,9 +2,9 @@
  * Student permits (permiso de examen) — S8/S13.
  *
  * Lists the student's active enrollments grouped by condition (RB-18:
- * one permiso per condition; mixed conditions → two permisos). The PDF
- * download stays disabled until the backend exposes a stateless endpoint
- * (informe §8; reference generator: tools/generar_permiso.py).
+ * one permiso per condition; mixed conditions → two permisos). The PDF is
+ * generated on-device with our school template (not the backend; the
+ * colleague only provides the enrolled subjects via `GET /mis-inscripciones`).
  */
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -137,8 +137,8 @@ export default function Permisos() {
             ))}
             <PillButton label="Descargar PDF del permiso" withArrow disabled />
             <Text style={[fonts.muted, { textAlign: 'center', fontSize: 12 }]}>
-              El PDF se habilita cuando el backend lo exponga para la app
-              (stateless, sin guardar el archivo).
+              El PDF se genera en tu celular con la plantilla de la escuela
+              (no se guarda en el servidor).
             </Text>
           </Card>
         ))}

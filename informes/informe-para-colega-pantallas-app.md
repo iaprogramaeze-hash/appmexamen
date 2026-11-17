@@ -2,7 +2,7 @@
 
 **Para:** equipo backend (`backend-epet-n36`)
 **De:** equipo frontend (app móvil `appmexamen`)
-**Fecha:** 2026-11-16 (§7 tecnicatura y §8 PDF: 2026-11-17)
+**Fecha:** 2026-11-16 (§7 tecnicatura: 2026-11-17; §8 aclaración PDF: 2026-11-17)
 **Motivo:** la app móvil agrega la pantalla de **Reportes** (listado +
 generación de reportes de inscripción a mesa). Consolidamos además los
 endpoints que seguimos necesitando para las demás pantallas. Nosotros **no
@@ -19,12 +19,17 @@ Contratos detallados de tutor/notas/asistencias/vínculo:
 | Tema | Qué pedimos | Quién |
 |---|---|---|
 | Tecnicatura del alumno (RB-02) | Persistir **una** tecnicatura en la cuenta y exponerla en `/auth/yo` (§7) | Uds |
-| Permiso de examen PDF (app) | Endpoint **stateless** que devuelva el PDF del propio alumno (§8) | Uds |
 | Reportes en la app | Definir **quién** genera reportes desde la app y **qué endpoint** usa (§2) | **Decisión suya** |
 | Formato de reportes | Hoy el snapshot devuelve JSON; ¿la app renderiza JSON o agregan export a PDF? | **Decisión suya** |
 | Historial de reportes | Si esperan listado persistente, hace falta `GET /reportes` (§2.3) | Uds |
 | Acceso staff a la app | Si los reportes los usa staff desde el celular: módulo `sigme_mobile` en esos roles (§3) | Uds |
 | Notas / asistencias / vínculo / permisos | Sigue pendiente lo del informe anterior (§4) | Uds |
+
+**Fuera de alcance para ustedes:** el **PDF del permiso de examen** lo
+genera la app de este lado (con nuestra plantilla; no la compartimos ni hace
+falta que la implementen). Lo único que necesitamos del backend para esa
+pantalla es **en qué materias se inscribió el alumno**, que ya está en
+`GET /mis-inscripciones`.
 
 **Fuera de alcance:** no pedimos cambios en SIGME web ni en los endpoints de
 reportes ya funcionando para el panel web; pedimos **acceso/variante para la
@@ -130,7 +135,6 @@ resumen:
 - [ ] Si es (a): módulo `sigme_mobile` + `reporte.exportar` en el rol staff
 - [ ] Los pendientes de §4
 - [ ] **§7:** persistir tecnicatura del alumno y exponerla en `/auth/yo`
-- [ ] **§8:** endpoint stateless del PDF del permiso para la app
 - [ ] Nos avisan los contratos finales (o si cambia alguno)
 
 ---
@@ -209,51 +213,17 @@ flujo de recuperación de clave.
 
 ---
 
-## 8. Permiso de examen en PDF para la app (2026-11-17)
+## 8. Permiso de examen en PDF — no es pedido para ustedes (2026-11-17)
 
-**Decisión del usuario:** el permiso y el PDF **los generamos nosotros**
-(equipo del proyecto); SIGME solo recibe la inscripción (materia + alumno).
-**No se persiste el archivo** en la BD (RB-09: solo datos de emisión si algún
-día hacen falta; por ahora ni eso es obligatorio para la app).
+Aclaración (usuario): **la plantilla y la generación del PDF son de
+nuestro lado** (app / equipo frontend). **No** mandamos la plantilla ni
+pedimos un endpoint de PDF.
 
-### 8.1 Qué ya hace la app
-
-La pantalla **Permisos** del alumno:
-
-1. Trae `GET /mis-inscripciones` y muestra **solo activas** (`estado !== 'anulado'`).
-2. Las agrupa **por condición** (RB-18): una sola condición → un permiso;
-   condiciones mezcladas → dos permisos en la misma pantalla.
-3. Por grupo: materias con fecha/hora + botón **"Descargar PDF del permiso"**
-   (hoy deshabilitado, aviso de pendiente backend).
-
-### 8.2 Referencia de generación (ya la tenemos)
-
-- Script: `tools/generar_permiso.py` — vacía el texto fijo de la plantilla y
-  superpone nombre, DNI, año, tecnicatura, condición, fecha y la tabla
-  ASIGNATURA/FECHA (máx. 6 filas por hoja, RB-13 de nuestro diseño).
-- Plantilla: `imagenes/Permiso de examen alumno 2026 - A4 - nuevo modelo.pdf`
-  (también en la raíz del repo).
-- Salida de prueba: `docs/muestras/permiso-muestra.pdf`.
-
-Pueden reusar esa lógica en el backend (reportlab + pypdf ya están en el
-script) o reimplementarla; el contrato de la app es solo pedir el bytes.
-
-### 8.3 Contrato mínimo pedido (propuesta — lo ajustan ustedes)
-
-```
-GET /api/v1/permiso-examen
-Authorization: Bearer <alumno>
-Accept: application/pdf
-```
-
-- **Dueño:** el propio alumno (`sub` del JWT); sin `reporte.exportar`.
-- **Salida:** `200` + `application/pdf` (el permiso de **todas** sus
-  inscripciones activas de la convocatoria vigente, agrupadas como manda
-  RB-18 — pueden emitir 1 o 2 PDFs según condiciones, o un ZIP; digan ustedes).
-- **Stateless:** no guardar el archivo; se genera y se devuelve.
-- Si prefieren una variante con `usuario_id` como en
-  `/reportes/permiso-examen/{usuario_id}`, acepten también
-  `usuario_id == sub` del alumno sin exigir `reporte.exportar`.
+Lo único que la app necesita del backend para la pantalla Permisos es el
+listado de **materias en las que se inscribió el alumno** — ya cubierto por
+`GET /mis-inscripciones` (solo activas). Con eso la app arma los permisos
+agrupados por condición (RB-18) y genera el PDF en el dispositivo; el
+archivo **no se guarda en la BD** (RB-09).
 
 **Contacto:** por este repo (`appmexamen`) o el canal que ya usemos para el
 flujo de recuperación de clave.

@@ -149,6 +149,12 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   plantilla `imagenes/Permiso de examen alumno 2026 - A4 - nuevo modelo.pdf`;
   contrato propuesto en informe §8 (`GET /permiso-examen`, `Accept:
   application/pdf`, dueño = sub del JWT, stateless).
+- **Corrección del usuario (misma fecha):** "la plantilla nos queda a
+  nosotros, el colega no tiene que tener referencia de la plantilla solo en
+  que materia se anoto el alumno". El informe §8 deja de pedir endpoint y no
+  comparte la plantilla: al colega solo le importa `GET /mis-inscripciones`
+  (ya existe). El PDF lo genera la **app** con nuestra plantilla (pendiente
+  de cablear el botón con generación local).
 
 ---
 
@@ -172,7 +178,7 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T14 | S12 | Tecnicatura única en registro + filtro RB-02 en Inicio + Perfil | inline | **Hecho**: `tecnicaturaRules.ts` (7 tests RED→GREEN), `tecnicatura.ts` (AsyncStorage), registro exige y guarda, Inicio filtra, Perfil muestra/cambia | |
 | T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
 | T16 | S13 | Permisos: listado real por condición (RB-18) + botón PDF pendiente | inline | **Hecho**: `permisoRules.ts` (5 tests RED→GREEN), `permisos.tsx` cableado a `fetchMisInscripciones` | |
-| T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho** | |
+| T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho y corregido**: el usuario aclaró que plantilla/PDF son nuestros; §8 ya no pide endpoint ni comparte plantilla | |
 
 ---
 
@@ -400,6 +406,12 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   contrato propuesto `GET /permiso-examen` + `Accept: application/pdf`,
   dueño = sub del JWT, stateless, referencia `tools/generar_permiso.py` y
   plantilla A4. `tsc --noEmit` exit 0.
+- **L34** (2026-11-17, verbatim): "la plantilla nos queda a nosotros, el
+  colega no tiene que tener referencia de la plantilla solo en que materia se
+  anoto el alumno". Informe §8 corregido: **no** se pide endpoint de PDF ni se
+  comparte la plantilla; solo importa `GET /mis-inscripciones` (materias
+  inscriptas), que ya está cableado. El PDF se genera de nuestro lado (app);
+  el botón sigue pendiente de la generación local con la plantilla nuestra.
 
 ## Pendientes (2026-11-16)
 

@@ -1,5 +1,5 @@
 /**
- * Student tabs: Inicio · Permisos · Notas · Perfil.
+ * Student tabs: Inicio · Permisos · Notas · Reportes · Perfil.
  * Floating dark pill tab bar (reference shot), active icon on a peach circle.
  */
 import { Ionicons } from '@expo/vector-icons';
@@ -57,6 +57,13 @@ export default function AlumnoLayout() {
         options={{
           title: 'Notas',
           tabBarIcon: ({ focused }) => <TabIcon name="school-outline" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="reportes"
+        options={{
+          title: 'Reportes',
+          tabBarIcon: ({ focused }) => <TabIcon name="stats-chart-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen

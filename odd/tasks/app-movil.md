@@ -93,6 +93,27 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 - Los textos funcionales no cambian por el estilo (siguen valiendo los de
   S2/S3/S5/S6/S8).
 
+### S11 — Pantalla de Reportes (esqueleto) — 2026-11-16
+- Usuario (verbatim): "revisa las pantallas de la app, el login, la de
+  eincirpcion a mesas, la de reportes y generar reportes de la incripcion a la
+  mesa, la de asistencia y la de notas de la libreta, no todas tiene conexion
+  al backend, si no existen creamos la pantalla igual pero dejamos vacia para
+  luego agragar lo que nos diga el proveedor del backend, pero si la tenemos en
+  frontend para luego aplicarlas".
+- Usuario (verbatim): "puedes usar el modelo de lo que estabamos haciendo
+  antes, pero modifica segun nuestro nuevo modelo".
+- Revisión de las pantallas pedidas: login ✅ cableado; inscripción a mesas ✅
+  cableada; asistencia (tutor) ✅ y notas (alumno/tutor) ✅ esqueletos vacíos
+  correctos — sin cambios.
+- **Reportes no existía** → crear `mobile/app/(alumno)/reportes.tsx` como
+  pestaña del grupo alumno: listado vacío + sección "Generar reporte de
+  inscripción a la mesa" **sin llamadas a API** (botón deshabilitado con aviso
+  de pendiente backend). Estilo: nuevo modelo oscuro, patrón de esqueleto de
+  `permisos.tsx`.
+- Decisión: una sola pantalla (listado + generación juntos); el acceso
+  (`reporte.exportar`, hoy solo staff del backend) se pide al colega en el
+  informe T13.
+
 ---
 
 ## Tasks
@@ -110,6 +131,8 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T9 | S2 | Quitar rastro de admin; menú solo según rol | inline | **Hecho** | 598d2b4 |
 | T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Parcial: `npm test` 27/27 y `tsc --noEmit` exit 0 en `mobile/`; bundle Expo 200 OK; falta verificar el flujo login→inscripción con backend real y endpoints de notas/tutor del colega | |
 | T11 | S7 | Informe colega entregado (ya redactado) | docs | **Hecho** | 27f68c2 |
+| T12 | S11 | Pantalla Reportes (esqueleto) + pestaña grupo alumno | inline | **Hecho**: `app/(alumno)/reportes.tsx` + pestaña en `_layout.tsx` (sin llamadas API) | |
+| T13 | S11 | Informe colega consolidado (reportes + pendientes de las pantallas) | docs | **Hecho**: `informes/informe-para-colega-pantallas-app.md` | |
 
 ---
 
@@ -285,6 +308,30 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   (damero de las 4 mascotas). Backend levantado en `0.0.0.0:8000` (uvicorn
   pid 1840) para conectar el frontend después. Sin APK en disco (salteado:
   requiere Android SDK).
+
+- **L30** (2026-11-16, verbatim): "revisa las pantallas de la app, el login,
+  la de eincirpcion a mesas, la de reportes y generar reportes de la incripcion
+  a la mesa, la de asistencia y la de notas de la libreta, no todas tiene
+  conexion al backend, si no existen creamos la pantalla igual pero dejamos
+  vacia para luego agragar lo que nos diga el proveedor del backend, pero si la
+  tenemos en frontend para luego aplicarlas" + "puedes usar el modelo de lo que
+  estabamos haciendo antes, pero modifica segun nuestro nuevo modelo" + "has
+  todo hasta hay y luego genera el informe". Revisión: login e inscripción
+  cableados OK; asistencia y notas (alumno/tutor) esqueletos vacíos OK.
+  Reportes no existía → S11/T12 (pestaña nueva en grupo alumno, esqueleto sin
+  API) y T13 (informe consolidado al colega con los 5 endpoints `reportes/*`
+  del snapshot + pendientes).
+- **L31** (2026-11-16): T12+T13 hechos. Creada `mobile/app/(alumno)/reportes.tsx`
+  (esqueleto: listado vacío + "Generar reporte de inscripción" deshabilitado,
+  mascot `mesas-examen`, sin llamadas a API) y pestaña **Reportes** en
+  `(alumno)/_layout.tsx` (5 tabs: Inicio · Permisos · Notas · Reportes ·
+  Perfil, icono `stats-chart-outline`). Copia de UI en registro neutro (sin
+  voseo). Informe nuevo `informes/informe-para-colega-pantallas-app.md`:
+  verifica los 5 endpoints `reportes/*` del snapshot (gate
+  `reporte.exportar`, JSON), pide decisión (a)/(b)/(c) de quién genera
+  reportes en la app, formato JSON/PDF, historial, módulo `sigme_mobile` para
+  staff, y reitera los pendientes del informe T11. Verificación: `tsc --noEmit`
+  exit 0 y `npm test` 27/27 en `mobile/`.
 
 ## Pendientes (2026-11-16)
 

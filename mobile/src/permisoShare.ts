@@ -10,7 +10,7 @@ import * as Sharing from 'expo-sharing';
 
 /** Downloads (once) and returns the template bytes. */
 export async function cargarPlantillaPermiso(): Promise<Uint8Array> {
-  const module = require('../../assets/permiso-plantilla.pdf') as number;
+  const module = require('../assets/permiso-plantilla.pdf') as number;
   const asset = Asset.fromModule(module);
   await asset.downloadAsync();
   const uri = asset.localUri ?? asset.uri;

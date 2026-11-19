@@ -1,6 +1,6 @@
 /**
  * Account creation (S8): 3 steps like the prototype — form → verify email →
- * pending approval. Role picker: alumno (default) or tutor (S3).
+ * pending approval. Alumno only (L41: the tutor role was removed).
  */
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -27,7 +27,6 @@ type Paso = 1 | 2 | 3;
 export default function Registro() {
   const router = useRouter();
   const [paso, setPaso] = useState<Paso>(1);
-  const [rol, setRol] = useState<'alumno' | 'tutor'>('alumno');
   const [form, setForm] = useState({
     nombre: '',
     apellido: '',
@@ -48,8 +47,7 @@ export default function Registro() {
     if (!form.nombre.trim() || !form.apellido.trim()) return 'Ingresá nombre y apellido.';
     if (!form.dni.trim()) return 'El D.N.I. es obligatorio (uno por cuenta).';
     if (!form.email.includes('@')) return 'Ingresá un correo válido.';
-    if (rol === 'alumno' && !form.tecnicatura)
-      return 'Elegí tu tecnicatura (una sola por alumno).';
+    if (!form.tecnicatura) return 'Elegí tu tecnicatura (una sola por alumno).';
     if (form.password.length < 12) return 'La contraseña necesita mínimo 12 caracteres.';
     if (form.password !== form.repetir) return 'Las contraseñas no coinciden.';
     return '';
@@ -58,15 +56,13 @@ export default function Registro() {
   /** Persists identity + one tecnicatura (RB-02) before email check. */
   const confirmarPaso1 = async (): Promise<boolean> => {
     if (errorForm) return false;
-    if (rol === 'alumno') {
-      const identidadOk = await guardarIdentidad({
-        nombre: form.nombre,
-        apellido: form.apellido,
-        dni: form.dni,
-      });
-      const ok = await guardarTecnicatura(form.tecnicatura);
-      if (!identidadOk || !ok) return false;
-    }
+    const identidadOk = await guardarIdentidad({
+      nombre: form.nombre,
+      apellido: form.apellido,
+      dni: form.dni,
+    });
+    const ok = await guardarTecnicatura(form.tecnicatura);
+    if (!identidadOk || !ok) return false;
     setPaso(2);
     return true;
   };
@@ -97,23 +93,6 @@ export default function Registro() {
 
           {paso === 1 && (
             <Card>
-              {/* Role picker (S3) */}
-              <View style={{ gap: space(2) }}>
-                <Text style={styles.label}>Tipo de cuenta</Text>
-                <View style={styles.roleRow}>
-                  <Chip
-                    label="Soy alumno"
-                    active={rol === 'alumno'}
-                    onPress={() => setRol('alumno')}
-                  />
-                  <Chip
-                    label="Soy tutor / padre"
-                    active={rol === 'tutor'}
-                    onPress={() => setRol('tutor')}
-                  />
-                </View>
-              </View>
-
               <Field
                 label="Nombre"
                 icon="person-outline"
@@ -154,24 +133,22 @@ export default function Registro() {
                 onChangeText={set('telefono')}
               />
 
-              {rol === 'alumno' ? (
-                <View style={{ gap: space(2) }}>
-                  <Text style={styles.label}>Tecnicatura (una sola)</Text>
-                  <View style={styles.roleRow}>
-                    {TECNICATURAS.map((t) => (
-                      <Chip
-                        key={t}
-                        label={t}
-                        active={form.tecnicatura === t}
-                        onPress={() => set('tecnicatura')(t)}
-                      />
-                    ))}
-                  </View>
-                  <Text style={[fonts.muted, { fontSize: 12 }]}>
-                    Solo verás mesas de esta tecnicatura (RB-02).
-                  </Text>
+              <View style={{ gap: space(2) }}>
+                <Text style={styles.label}>Tecnicatura (una sola)</Text>
+                <View style={styles.roleRow}>
+                  {TECNICATURAS.map((t) => (
+                    <Chip
+                      key={t}
+                      label={t}
+                      active={form.tecnicatura === t}
+                      onPress={() => set('tecnicatura')(t)}
+                    />
+                  ))}
                 </View>
-              ) : null}
+                <Text style={[fonts.muted, { fontSize: 12 }]}>
+                  Solo verás mesas de esta tecnicatura (RB-02).
+                </Text>
+              </View>
 
               <Field
                 label="Contraseña"

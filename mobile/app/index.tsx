@@ -1,11 +1,13 @@
 /**
  * Entry: redirects to the right flow based on the session.
+ * L40: every authenticated session lands on the student home (Inicio);
+ * the tutor branch was removed from the routing.
  */
 import { Redirect } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
-import { isTutor, useAuth } from '../src/auth';
+import { useAuth } from '../src/auth';
 import { colors, gradient } from '../src/theme';
 
 export default function Index() {
@@ -27,6 +29,5 @@ export default function Index() {
   }
 
   if (!session) return <Redirect href="/login" />;
-  if (isTutor(session.roles)) return <Redirect href="/(tutor)" />;
   return <Redirect href="/(alumno)" />;
 }

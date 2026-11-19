@@ -1,5 +1,6 @@
 /**
- * Student tabs: Inicio · Permisos · Notas · Reportes · Perfil.
+ * Student tabs: Inicio · Permisos · Perfil (L41: Notas and Reportes were
+ * removed from the tab bar; Inscripción is reached from the Inicio bubbles).
  * Floating dark pill tab bar (reference shot), active icon on a peach circle.
  */
 import { Ionicons } from '@expo/vector-icons';
@@ -50,20 +51,6 @@ export default function AlumnoLayout() {
         options={{
           title: 'Permisos',
           tabBarIcon: ({ focused }) => <TabIcon name="document-text-outline" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="notas"
-        options={{
-          title: 'Notas',
-          tabBarIcon: ({ focused }) => <TabIcon name="school-outline" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="reportes"
-        options={{
-          title: 'Reportes',
-          tabBarIcon: ({ focused }) => <TabIcon name="stats-chart-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen

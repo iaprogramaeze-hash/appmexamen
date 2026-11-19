@@ -1,6 +1,6 @@
 /**
- * Student profile (S4/S8): read-only data, change password, sign out,
- * and the tutor-link code generator (the student controls the code).
+ * Student profile (S8): read-only data, change password and sign out
+ * (L41: the tutor-link code was removed with the tutor role).
  */
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -19,20 +19,9 @@ import { guardarTecnicatura, leerTecnicatura } from '../../src/tecnicatura';
 import { TECNICATURAS } from '../../src/tecnicaturaRules';
 import { colors, fonts, radii, space } from '../../src/theme';
 
-/** Generates a short human-readable link code (like K7M-2QX). */
-function makeCode(): string {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const pick = () => alphabet[Math.floor(Math.random() * alphabet.length)];
-  const chunk = () =>
-    Array.from({ length: 3 }, pick).join('');
-  return `${chunk()}-${Array.from({ length: 3 }, pick).join('')}`;
-}
-
 export default function PerfilAlumno() {
   const router = useRouter();
   const { session, signOut } = useAuth();
-  const [codigo, setCodigo] = useState<string | null>(null);
-  const [restante, setRestante] = useState(0);
   const [tecnicatura, setTecnicatura] = useState<string | null>(null);
 
   // Load the one tecnicatura stored on this device (RB-02).
@@ -51,18 +40,6 @@ export default function PerfilAlumno() {
     if (ok) setTecnicatura(t);
   };
 
-  // Countdown for the link code lifetime (10 min, S4 / informe §3.3).
-  useEffect(() => {
-    if (!codigo || restante <= 0) return;
-    const t = setTimeout(() => setRestante((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [codigo, restante]);
-
-  const generar = () => {
-    setCodigo(makeCode());
-    setRestante(600);
-  };
-
   const cerrarSesion = async () => {
     await signOut();
     router.replace('/login');
@@ -79,7 +56,7 @@ export default function PerfilAlumno() {
           />
           <View style={{ flex: 1 }}>
             <Text style={fonts.h1}>Perfil</Text>
-            <Text style={fonts.muted}>Tus datos y tu código de tutor</Text>
+            <Text style={fonts.muted}>Tus datos</Text>
           </View>
         </View>
 
@@ -111,32 +88,6 @@ export default function PerfilAlumno() {
               />
             ))}
           </View>
-        </Card>
-
-        <Card style={{ gap: space(3) }}>
-          <Text style={fonts.h3}>Código para vincular un tutor</Text>
-          <Text style={[fonts.muted, { lineHeight: 20 }]}>
-            Generá un código y pasáselo a tu tutor o padre: con él se vincula
-            desde su cuenta y puede ver tus notas y asistencias. El código vale
-            10 minutos y sirve una sola vez.
-          </Text>
-
-          {codigo ? (
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{codigo}</Text>
-              <Text style={styles.codeTimer}>
-                {restante > 0
-                  ? `Vence en ${Math.floor(restante / 60)}:${String(restante % 60).padStart(2, '0')}`
-                  : 'Vencido — generá uno nuevo'}
-              </Text>
-            </View>
-          ) : null}
-
-          <PillButton
-            label={codigo && restante > 0 ? 'Generar otro código' : 'Generar código'}
-            withArrow
-            onPress={generar}
-          />
         </Card>
 
         <Card style={{ gap: space(3) }}>
@@ -191,26 +142,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.purpleDeep,
     fontStyle: 'italic',
-  },
-  codeBox: {
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: radii.lg,
-    borderWidth: 1.5,
-    borderColor: colors.purple,
-    padding: space(5),
-    alignItems: 'center',
-    gap: space(1),
-  },
-  codeText: {
-    fontSize: 34,
-    fontWeight: '800',
-    letterSpacing: 4,
-    color: colors.ink,
-  },
-  codeTimer: {
-    fontSize: 13,
-    color: colors.purpleDeep,
-    fontWeight: '600',
   },
   headerRow: {
     flexDirection: 'row',

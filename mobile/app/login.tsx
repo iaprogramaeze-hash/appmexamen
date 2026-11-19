@@ -72,7 +72,7 @@ export default function Login() {
             Iniciar sesión
           </Text>
           <Text style={[fonts.muted, { marginBottom: space(5) }]}>
-            Acceso de alumnos y tutores · el otro sistema aprueba cada cuenta
+            Acceso de alumnos · el otro sistema aprueba cada cuenta
           </Text>
 
           <Card>

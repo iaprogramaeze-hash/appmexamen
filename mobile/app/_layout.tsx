@@ -25,7 +25,6 @@ export default function RootLayout() {
           <Stack.Screen name="registro" />
           <Stack.Screen name="recuperar" />
           <Stack.Screen name="(alumno)" />
-          <Stack.Screen name="(tutor)" />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

@@ -15,17 +15,12 @@ import { useAuth } from '../../src/auth';
 import {
   ApiError,
   apiErrorMessage,
-  fetchMesasDisponibles,
   fetchMisInscripciones,
   type MisInscripcion,
 } from '../../src/api';
 import { Card, PillButton, Screen } from '../../src/components/ui';
-import { leerIdentidad, formatoAlumnoImpreso } from '../../src/identidad';
-import { leerTecnicatura } from '../../src/tecnicatura';
 import { agrupaPorCondicion, type GrupoPermiso } from '../../src/permisoRules';
-import { generarPermisoPdf } from '../../src/permisoPdf';
-import { resolverAnio } from '../../src/permisoPdfRules';
-import { cargarPlantillaPermiso, compartirPdf } from '../../src/permisoShare';
+import { generarPermisoParaGrupo } from '../../src/permisoFlow';
 import { colors, fonts, radii, space } from '../../src/theme';
 
 /** "2026-12-15" -> "15/12". */
@@ -37,17 +32,6 @@ function formatFecha(iso: string): string {
 /** "08:00:00" -> "08:00". */
 function formatHora(hora: string | null): string {
   return hora ? hora.slice(0, 5) : '—';
-}
-
-function slugCondicion(condicion: string): string {
-  return (
-    condicion
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'permiso'
-  );
 }
 
 export default function Permisos() {
@@ -102,41 +86,10 @@ export default function Permisos() {
     setDescargando(grupo.condicion);
     setAvisoPdf('');
     try {
-      const identidad = await leerIdentidad();
-      const carrera = await leerTecnicatura();
-      if (!identidad || !carrera) {
-        setAvisoPdf(
-          'Faltan datos del permiso. Completá nombre, D.N.I. y tecnicatura en tu perfil (o creá la cuenta de nuevo).',
-        );
-        return;
-      }
-
-      let anio = '';
-      if (session && !session.demo) {
-        try {
-          const mesas = await fetchMesasDisponibles(session.access);
-          anio = resolverAnio(grupo.items, mesas);
-        } catch {
-          // Year is optional: the form still prints without the number.
-        }
-      }
-
-      const plantilla = await cargarPlantillaPermiso();
-      const bytes = await generarPermisoPdf(
-        {
-          alumno: formatoAlumnoImpreso(identidad),
-          dni: identidad.dni,
-          condicion: grupo.condicion,
-          carrera,
-          anio,
-          materias: grupo.items.map((i) => ({
-            nombre: i.materia_nombre,
-            fecha: i.fecha,
-          })),
-        },
-        plantilla,
+      await generarPermisoParaGrupo(
+        grupo,
+        session && !session.demo ? session.access : null,
       );
-      await compartirPdf(bytes, `permiso-${slugCondicion(grupo.condicion)}.pdf`);
       setAvisoPdf('PDF listo para compartir o guardar.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'No se pudo generar el PDF.';

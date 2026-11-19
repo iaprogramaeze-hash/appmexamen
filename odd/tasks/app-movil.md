@@ -1,9 +1,12 @@
 # Feature: App móvil Android (React Native + Expo)
 
-**Objetivo:** APK descargable real (no HTML) que reemplaza al prototipo web, con
-roles alumno y tutor, notas y asistencias. **Rama:** `feat/app-movil` sobre
-`main` de `iaprogramaeze-hash/appmexamen`. **Estrategia de entrega:**
-`ask-on-risk` (se pide cadena si pasa ~400 líneas). **Tests:** Jest + React
+**Objetivo:** APK descargable real (no HTML) que reemplaza al prototipo web
+(rol **tutor** y pestañas **Notas/Reportes** eliminados en L41; el alumno
+queda con Inicio · Inscripción a mesas · Permisos · Perfil). **Rama:**
+`feat/app-movil` sobre `main` de `iaprogramaeze-hash/appmexamen`.
+**Estrategia de entrega:** `ask-on-risk` → **`feature-branch-chain`**
+(elegida por el usuario el 2026-11-19: PR tracker draft/no-merge + PRs
+hijos encadenados; no se mezclan estrategias). **Tests:** Jest + React
 Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 
 **Reparto:** nosotros solo frontend + informe; backend/BD los hace el colega
@@ -19,26 +22,44 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 - Desarrollo en `origin` = `iaprogramaeze-hash/appmexamen`; al final, push a
   `original` (`formulariosepetn36-ai/appmexamen`).
 
-### S2 — Estructura de pantallas (varias, no una sola)
+### S2 — Estructura de pantallas (varias, no una sola) — actualizada (L41)
 - Usuario: "entonces varias pantallas en ves de una sola seria mejor?"
 - Flujo de acceso aparte: Login, Recuperar, Registro.
 - Rol alumno con pestañas: **Inicio** (inscripción), **Permisos**,
   **Notas**, **Perfil**.
+  - **(L41)** Lista final del usuario: "alumnos queda con las siguientes
+    pantallas, incripcion a mesas(mesas debe aparecer las mesas de las
+    materias segun la tecnicatura, tiene filtrado por el año la materia,
+    si es de 1ro,2do,3ro,4to,5to,6to, poder incirbirse como darse de
+    baja(solo se de baja si no es el dia de la mesa) genera permiso de
+    examen con el pdf que ya tenemos de permiso de examen), inicio,
+    perfil, permisos(todos los permiso de examen que se hicieron y vulve
+    a generar una copia del permiso si es que el alumno lo requiere)" →
+    pestañas **Inicio · Permisos · Perfil**; Inscripción a mesas se entra
+    desde la burbuja de Inicio; se eliminan las pestañas **Notas** y
+    **Reportes** (archivos borrados; recuperables de git).
 - Rol tutor con pestañas: **Notas** (del alumno vinculado),
   **Asistencias**, **Perfil**.
+  - **(L41)** "se elimna de creacion de usuari al tutor y sus pantallas" →
+    rol tutor **eliminado** (ver S3/S4).
 - **Sin panel admin** en la app: "eliminaremos el rol de admin en nustra app".
 
-### S3 — Rol tutor / padre
+### S3 — Rol tutor / padre — DESCARTADA (L41)
 - Usuario: "armaremos un rol padre o tutor".
 - El tutor **solo lee**: "el rol a tutor o padre solo podra ver las notas y
   asisitencias a clases del alumno, no podra incribirse a materias a rendir".
 - `/auth/yo` con `roles` incluyendo `tutor` → la app ramifica pantallas.
+- **(L41)** "se elimna de creacion de usuari al tutor y sus pantallas" →
+  fuera: selector de rol en Registro, carpeta `app/(tutor)/`, entrada de
+  Stack, textos de Login. El login siempre va a Inicio de alumno (L40).
 
-### S4 — Vínculo tutor ↔ alumno por código del alumno
+### S4 — Vínculo tutor ↔ alumno por código del alumno — DESCARTADA (L41)
 - Usuario eligió: **"Código del alumno"**.
 - Alumno genera código desde **Perfil**; tutor lo ingresa al registrarse o
   desde su Perfil para vincularse.
 - El backend implementa el flujo (§3.3 del informe); la app solo lo consume.
+- **(L41)** con el tutor eliminado el código de vinculación no tiene
+  destinatario → se quitó el generador de código de Perfil.
 
 ### S5 — Notas trimestrales
 - Usuario: "lo nuevo que el alumno podra ver es sus notas trimistrales que
@@ -155,7 +176,98 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   que materia se anoto el alumno". El informe §8 deja de pedir endpoint y no
   comparte la plantilla: al colega solo le importa `GET /mis-inscripciones`
   (ya existe). El PDF lo genera la **app** con nuestra plantilla (pendiente
-  de cablear el botón con generación local).
+  de la generación local con la plantilla nuestra).
+
+### S14 — Index/Inicio: hub de accesos a los sectores — 2026-11-19
+- Usuario (verbatim, primera descripción): "bueno, vamos a la pantalla de
+  index de la app, describo como debe ser y con que tiene que contar, debe
+  tener el mismo que la imagen con nombre: 3, de la carpeta: diseño de app,
+  esto va a mostra los sectores en las burbujas que se ven, que son
+  animadas al precionar , y en ves del marcianito que tiene podrimos poner
+  como mascota de esa parte un coatí parado, y si sebe reiniciar tienes el
+  permiso y arracamos desde aca no desde una revicion ni nada mas"
+- Usuario (verbatim, ampliación): "despues del loguin pasa al index,
+  donde debera aparecer los acceso a diferentes sectores: … igual lo vamos
+  hacindo juntos, debe tener los estilo que teniene diseño de app y si
+  nolo vamos modificando segun el mismo estilo"
+- Decisión de entrada (respuesta del usuario): **"Diseño en Inicio"** —
+  `app/index.tsx` sigue redirigiendo según sesión como hoy; el hub es la
+  pestaña **Inicio** del alumno.
+- Los "sectores" eran los **4 accesos** (no las tecnicaturas): Inscripción
+  a mesa, Registro de inscripción, Ver mis asistencias, Ver mi libreta.
+  Cada burbuja **navega** a su sección al presionarla (con animación de
+  press). **L39: el usuario descartó libreta y asistencias → quedan 2
+  burbujas** (Inscripción a mesa, Registro de inscripción).
+- Estructura (igual que `imagenes/diseño app/3.jpg`): fondo oscuro,
+  título arriba centrado ("Tus sectores"), burbujas esféricas grandes en
+  zigzag, coatí parado abajo a la derecha en lugar del marcianito, tab
+  bar real del grupo alumno (es la pestaña).
+- La inscripción actual de Inicio se **mueva** a `(alumno)/inscripcion.tsx`
+  (destino de la primera burbuja); Inicio queda como hub puro.
+- Estilo (verbatim): "debe tener los estilo que teniene diseño de app y
+  si nolo vamos modificando segun el mismo estilo" → todas las pantallas
+  nuevas usan el estilo de `imagenes/diseño app/`, iterando con el usuario.
+- Checks: `tsc --noEmit`, suite completa, bundle Metro y verificación
+  visual en Expo Go. **Excepción de test:** no hay infraestructura de
+  render (sin `@testing-library/react-native`, `testMatch` solo `.ts`);
+  el resultado es visual y se verifica manualmente.
+
+### S15 — Sección Inscripción a mesa — 2026-11-19
+- Usuario (verbatim): "incripcion a mesa(debe mostras la mesas habilitidas
+  para rendir con fecha y hora pueda tambien dar de baja la incripcion si
+  todavia no es el dia de la mesa, solo segun su Tecnicatura, de otra
+  tecnicatura no muestra una vez anotada a todas las materias que se
+  inscribio podra bajar el permiso de examen)"
+- Muestra las mesas habilitadas para rendir **con fecha y hora** (hoy ya
+  se muestra: listado de `GET /mesas-disponibles` filtrado por
+  tecnicatura).
+- **Dar de baja** la inscripción si todavía no es el día de la mesa →
+  acción nueva; el endpoint de baja no existe en el snapshot → UI con
+  aviso "pendiente backend" + pedido al colega (patrón de Reportes).
+  - **(L41, hecho)** regla pura `puedeDarDeBaja(fecha, hoy)` en
+    `src/inscripcionRules.ts` (5 tests RED→GREEN): solo hasta el día
+    **anterior** a la mesa; mismo día o después → no. Botón "Dar de baja"
+    por inscripción activa en "Mis inscripciones"; si no corresponde se
+    muestra el motivo; al presionarlo → aviso honesto de que el endpoint
+    sigue pendiente del colega.
+- **Solo su tecnicatura**: de otra tecnicatura no muestra nada (RB-02,
+  ya implementado con `filtraMesasPorTecnicatura`; se conserva).
+- "una vez anotada a todas las materias que se inscribio podra bajar el
+  permiso de examen" → el PDF del permiso queda ligado a tener
+  inscripciones; regla exacta de "todas" a confirmar con el usuario.
+  - **(L41, hecho)** en Inscripción se agregó **"Generar permiso ·
+    {condición}"** por grupo de inscripciones activas, con el mismo flujo
+    PDF en dispositivo que Permisos (extraído a `src/permisoFlow.ts`,
+    una sola dueña; RB-09: nunca se sube al servidor).
+
+### S16 — Sección Registro de inscripción — 2026-11-19
+- Usuario (verbatim): "registro de inscripccion a mesa(podra ver el
+  registro de incripcion donde tiene para poder descargar de nuevo el pdf
+  de la incripcion a la mesa)"
+- Ve el **registro** de sus inscripciones y puede **descargar de nuevo**
+  el PDF de la inscripción a la mesa.
+- Hoy la pantalla Permisos ya lista las inscripciones agrupadas y tiene
+  "Descargar PDF" (T18) → primera versión: la burbuja abre esa pantalla;
+  si el usuario quiere una pantalla propia, se separa (T21).
+
+### S17 — Sección Ver mis asistencias — 2026-11-19 — DESCARTADA (L39)
+- Usuario (verbatim): "ver mi asitencias(podra ver un calendario con
+  todos los dias que asistio y que dias faltoy en la parte superior podra
+  ver la cantidad de faltas acumuladas)"
+- **Parte superior**: cantidad de **faltas acumuladas**.
+- **Calendario** con los días que asistió y los que faltó.
+- Backend pendiente (`GET /asistencias`, S6/T8) → pantalla con la UI
+  (contador + calendario + leyenda) en esqueleto sin datos, aviso de
+  pendiente.
+
+### S18 — Sección Ver mi libreta — 2026-11-19 — DESCARTADA (L39)
+- Usuario (verbatim): "ver mi libreta(podra ver sus notas trimstrales por
+  materias, segun tecnicatura y año que este el alumno)"
+- Notas **trimestrales** por materia, según la tecnicatura y el año del
+  alumno.
+- Es la pantalla Notas existente (T6): esqueleto ya creado, pendiente de
+  `GET /notas`; la burbuja la abre y se le suman filtros de
+  tecnicatura/año cuando haya datos (T23).
 
 ---
 
@@ -166,21 +278,27 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
 | T1 | S1 | Scaffold Expo en `mobile/` + rama `feat/app-movil` | inline | **Hecho** | 598d2b4 |
 | T2 | S9 | Capa API (`API_BASE`, cliente auth con token) | inline | **Hecho** (clientes mesas, inscripciones, notas, asistencias en `src/api.ts`) | 598d2b4 |
 | T3 | S8 | Pantallas de acceso: Login, Recuperar, Registro | inline | **Hecho** (iteración visual aplicada: mascot con máscara circular en acceso) | 598d2b4 |
-| T4 | S2,S8 | Navegación por roles (tabs alumno / tutor) | inline | **Hecho** | 598d2b4 |
+| T4 | S2,S8 | Navegación por roles (tabs alumno / tutor) | inline | **Hecho** (ramificación de tutor eliminada en L40/L41: solo quedan tabs alumno) | 598d2b4 |
 | T5 | S8 | Inicio + Inscripción (mesas) | inline | **Hecho**: `GET /mesas-disponibles` + `GET /mis-inscripciones` + `POST /inscripciones` + `GET /convocatoria-vigente` cableados (badge abierta/cerrada); marca "Inscripto" y evita reintentar una inscripción duplicada (6e4b264, 33fedcd, 3deb2e5) | 6e4b264+ |
-| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Pendiente de backend: `GET /notas` no existe aún en el snapshot (va en el informe) | 598d2b4 |
-| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Parcial: cambiar clave y recuperar cableados a `auth/*`; Permisos espera endpoint; código tutor sigue local | |
-| T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | Notas y Asistencias en esqueleto visual vacío; sin datos de backend | 598d2b4 |
+| T6 | S5,S6 | Pantalla Notas (alumno) | inline | Pendiente de backend: `GET /notas` no existe aún en el snapshot (va en el informe); **pestaña/archivo eliminados (L41)** | 598d2b4 |
+| T7 | S8 | Permisos + Perfil (con generar código tutor) | inline | Parcial: cambiar clave y recuperar cableados a `auth/*`; **código tutor eliminado (L41)** | |
+| T8 | S3,S4,S6 | Pantallas tutor: vínculo, Notas, Asistencias | inline | **Eliminada (L41)**: carpeta `app/(tutor)/` borrada junto con el rol | 598d2b4 |
 | T9 | S2 | Quitar rastro de admin; menú solo según rol | inline | **Hecho** | 598d2b4 |
 | T10 | S1 | Verificación: tests + Expo Go + flujo login→inscripción | inline | Parcial: `npm test` 27/27 y `tsc --noEmit` exit 0 en `mobile/`; bundle Expo 200 OK; falta verificar el flujo login→inscripción con backend real y endpoints de notas/tutor del colega | |
 | T11 | S7 | Informe colega entregado (ya redactado) | docs | **Hecho** | 27f68c2 |
-| T12 | S11 | Pantalla Reportes (esqueleto) + pestaña grupo alumno | inline | **Hecho**: `app/(alumno)/reportes.tsx` + pestaña en `_layout.tsx` (sin llamadas API) | |
+| T12 | S11 | Pantalla Reportes (esqueleto) + pestaña grupo alumno | inline | **Hecho** y luego **pestaña/archivo eliminados (L41)** (la pantalla sigue en git) | |
 | T13 | S11 | Informe colega consolidado (reportes + pendientes de las pantallas) | docs | **Hecho**: `informes/informe-para-colega-pantallas-app.md` | |
 | T14 | S12 | Tecnicatura única en registro + filtro RB-02 en Inicio + Perfil | inline | **Hecho**: `tecnicaturaRules.ts` (7 tests RED→GREEN), `tecnicatura.ts` (AsyncStorage), registro exige y guarda, Inicio filtra, Perfil muestra/cambia | |
 | T15 | S12 | Informe al colega: persistir tecnicatura en la cuenta y exponerla | docs | **Hecho** (agregado a `informes/informe-para-colega-pantallas-app.md`) | |
 | T16 | S13 | Permisos: listado real por condición (RB-18) + botón PDF pendiente | inline | **Hecho**: `permisoRules.ts` (5 tests RED→GREEN), `permisos.tsx` cableado a `fetchMisInscripciones` | |
 | T17 | S13 | Informe §8: contrato PDF stateless con `tools/generar_permiso.py` como referencia | docs | **Hecho y corregido**: el usuario aclaró que plantilla/PDF son nuestros; §8 ya no pide endpoint ni comparte plantilla | |
 | T18 | S13 | Generación local del PDF del permiso (plantilla + pdf-lib) y botón activo | inline | **Hecho**: `permisoPdfRules.ts` + `permisoPdf.ts` + `permisoShare.ts` + `identidad.ts`; registro guarda nombre/DNI; botón descarga y comparte; 20 tests nuevos; suite 59/59 | 3f7596c |
+| T19 | S14 | Hub Inicio: 2 burbujas (estilo imagen 3 + coatí + animación bob), mueve el listado a `inscripcion.tsx`, destinos de las burbujas | inline | **Hecho** (burbujas centradas + bob con delay escalonado, L40; verificado tsc + tests + export) | `2fdac24` |
+| T20 | S15 | Inscripción: botón "dar de baja" (pendiente backend) + regla del permiso de examen | inline | **Hecho (UI + regla + PDF en Inscripción)**: `inscripcionRules.ts` (5 tests RED→GREEN), botón "Dar de baja" con motivo cuando no corresponde, aviso de endpoint pendiente; botones "Generar permiso · {condición}" vía `permisoFlow.ts`; **el endpoint de baja sigue pendiente del colega** | `2fdac24` |
+| T21 | S16 | Registro de inscripción: pantalla/destino propio + re-descarga del PDF | inline | Pendiente (v1: burbuja → Permisos) | |
+| T22 | S17 | Mis asistencias: contador de faltas + calendario (esqueleto hasta `GET /asistencias`) | inline | **Descartada (L39)** (esqueleto creado y borrado) | |
+| T23 | S18 | Mi libreta: burbuja → Notas + filtros tecnicatura/año cuando haya backend | inline | **Descartada (L39)** | |
+| T24 | S2,S3,S4 | Recorte de pantallas (L41): eliminar tutor completo y podar tabs a Inicio · Permisos · Perfil | inline | **Hecho**: borrados `app/(tutor)/` (4 archivos), `notas.tsx`, `reportes.tsx`; sin selector de rol en Registro; sin código de tutor en Perfil; textos de Login/Perfil actualizados; `Stack.Screen "(tutor)"` fuera | `2fdac24` |
 
 ---
 
@@ -432,6 +550,107 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   lista de alto riesgo del diff (no toca auth, BD, migraciones ni APIs
   públicas del backend; es añadido en la app).
 
+- **L36** (2026-11-19, verbatim): "bueno, vamos a la pantalla de index de
+  la app, describo como debe ser y con que tiene que contar, debe tener el
+  mismo que la imagen con nombre: 3, de la carpeta: diseño de app, esto va
+  a mostra los sectores en las burbujas que se ven, que son animadas al
+  precionar , y en ves del marcianito que tiene podrimos poner como mascota
+  de esa parte un coatí parado, y si sebe reiniciar tienes el permiso y
+  arracamos desde aca no desde una revicion ni nada mas". Pregunta de
+  entrada (el index hoy es un salto automático según sesión): el usuario
+  eligió **"Diseño en Inicio"** → S14/T19: el index no se toca; el diseño
+  de `imagenes/diseño app/3.jpg` pasa a la pestaña Inicio del alumno con
+  las burbujas de los 2 sectores (`TECNICATURAS`), animación al presionar
+  y coatí parado; la inscripción actual queda debajo en el mismo scroll.
+  Sin reinicio de OpenCode: el generador de imágenes gratuito por HTTP
+  (Pollinations) ya funciona sin MCP.
+
+- **L37** (2026-11-19, verbatim): "despues del loguin pasa al index,
+  donde debera aparecer los acceso a diferentes sectores: incripcion a
+  mesa(debe mostras la mesas habilitidas para rendir con fecha y hora
+  pueda tambien dar de baja la incripcion si todavia no es el dia de la
+  mesa, solo segun su Tecnicatura, de otra tecnicatura no muestra una vez
+  anotada a todas las materias que se inscribio podra bajar el permiso de
+  examen),registro de inscripccion a mesa(podra ver el registro de
+  incripcion donde tiene para poder descargar de nuevo el pdf de la
+  incripcion a la mesa), ver mi asitencias(podra ver un calendario con
+  todos los dias que asistio y que dias faltoy en la parte superior podra
+  ver la cantidad de faltas acumuladas), ver mi libreta(podra ver sus
+  notas trimstrales por materias, segun tecnicatura y año que este el
+  alumno). igual lo vamos hacindo juntos, debe tener los estilo que teniene
+  diseño de app y si nolo vamos modificando segun el mismo estilo".
+  Cambia el alcance de S14: los "sectores" de las burbujas son los **4
+  accesos** (no las tecnicaturas) y presionar **navega** a cada sección →
+  S14 reescrito + S15-S18 nuevos; T19 reabierto y T20-T23 creados.
+
+- **L38** (2026-11-19, verbatim): "al parecer, no vamos a implentar lo de
+  libreta y asistencias, pero si ya hiciste un modelo de fronted mustrme
+  antes de sacarlo". Señal de cambio de alcance en S17/S18 (T22/T23):
+  probablemente **no** se implementen libreta ni asistencias; el usuario
+  pide **ver el modelo de frontend antes de quitarlo**. No se elimina nada
+  todavía: Metro levantado (`exp://192.168.0.64:8081`) para la revisión
+  visual del hub + pantalla de asistencias (esqueleto) + Notas (libreta,
+  esqueleto preexistente). Queda pendiente el veredicto del usuario.
+
+- **L39** (2026-11-19, verbatim): "la sacamos, pero las demas no se ven ni
+  la pantala de las burbujas, que paso ?". Decisión: **se sacan del hub las
+  burbujas de libreta y asistencias** (S17/S18 → descartadas; T22/T23 →
+  descartadas; el hub queda con 2 burbujas: Inscripción a mesa y Registro
+  de inscripción). Seguido de (verbatim): "por favor resuelve porque no se
+  ven las pantallas, pero infroma cada 2 minutos, despues caundo se ve
+  enalazamos con el backend" → prioridad: que el usuario **vea** las
+  pantallas en Expo Go; el enlace con el backend queda para después.
+  Diagnóstico de la incidencia: el celular sí conectó (log de Metro:
+  "Android Bundled 6525ms") pero la app mostraba **Login** (sesión
+  vencida), y Metro corría en **modo CI** (sin Fast Refresh) →
+  reiniciado en modo normal; backend levantado en :8000 para el login
+  real.
+
+- **L40** (2026-11-19, verbatim): "el login tiene que terner conexion con
+  el inicio de Alumno, ya que eliminamos tutor, y las 2 burbujas mejora el
+  texto en el medio y con movimento de burbuja". Acción: (1) `index.tsx` ya
+  no ramifica por rol — toda sesión autenticada cae en `/(alumno)`
+  (Inicio); (2) `SectorBubble` con el texto **al centro** de la esfera y
+  **movimiento de burbuja** (bob vertical con delay escalonado por burbuja,
+  driver nativo; el press sigue funcionando). Verificación: `tsc` OK y
+  59/59. **Aclaración con evidencia:** el tutor NO estaba eliminado en el
+  código (4 pantallas en `app/(tutor)/`, selector "Soy tutor / padre" en
+  Registro, texto en Login, `Stack.Screen "(tutor)"`) — solo se quitó la
+  ramificación del login; queda pendiente la decisión de eliminarlo por
+  completo.
+
+- **L41** (2026-11-19, verbatim): "y alumnos queda con las siguientes
+  pantallas, incripcion a mesas(mesas debe aparecer las mesas de las
+  materias segun la tecnicatura, tiene filtrado por el año la materia,
+  si es de 1ro,2do,3ro,4to,5to,6to, poder incirbirse como darse de
+  baja(solo se de baja si no es el dia de la mesa) genera permiso de
+  examen con el pdf que ya tenemos de permiso de examen, inicio, perfil,
+  permisos(todos los permiso de examen que se hicieron y vulve a generar
+  una copia del permiso si es que el alumno lo requiere). se elimna de
+  creacion de usuari al tutor y sus pantallas. luego de logearse debe ir
+  a la pantalla de incio del alumno, donde con las bubujas podra elegir
+  la siguiente pantalla". Acciones: (1) **tutor eliminado completo**
+  (S3/S4 descartadas): carpeta `app/(tutor)/` borrada, selector de rol
+  fuera de Registro (siempre alumno + tecnicatura obligatoria), código de
+  tutor fuera de Perfil, `Stack.Screen "(tutor)"` fuera, textos de Login
+  actualizados; (2) **tabs del alumno podadas** a Inicio · Permisos ·
+  Perfil (S2): fuera `notas.tsx` y `reportes.tsx` (lista final del
+  usuario: "alumnos queda con las siguientes pantallas, incripcion a
+  mesas... inicio, perfil, permisos"); (3) **Inscripción**: regla de
+  baja `puedeDarDeBaja` (RED→GREEN, 5 tests: solo hasta el día anterior
+  a la mesa), botón "Dar de baja" con aviso de endpoint pendiente, y
+  botones **"Generar permiso · {condición}"** con el PDF que ya
+  tenemos (flujo extraído a `src/permisoFlow.ts`, compartido con
+  Permisos); (4) Permisos ya cubre "todos los permisos + volver a
+  generar una copia" (botón activo, T18); (5) login → Inicio ya estaba
+  (L40). Verificación: `tsc` OK y **64/64 tests**.
+
+- **L42** (2026-11-19): decisión de entrega — al superar la rama las
+  ~400 líneas (estrategia `ask-on-risk`), el usuario eligió
+  **`feature-branch-chain`**: PR tracker draft/no-merge en
+  `feat/app-movil` + PRs hijos encadenados cuando toque entregar;
+  registrado en el encabezado (no se mezclan estrategias).
+
 ## Pendientes (2026-11-16)
 
 **Nosotros (mobile):**
@@ -443,10 +662,14 @@ Testing Library (scaffold Expo); verificación manual en Expo Go / emulator.
   sigue trabajando sobre el worktree con el repo viejo como almacén.
 
 **Bloqueado por el colega (backend/BD, informe T11 ya entregado):**
-- [ ] `GET /notas` (alumno) → pantalla Notas (T6).
-- [ ] `GET /tutor/alumnos/{id}/notas` y `.../asistencias` (T8).
-- [ ] Vínculo tutor↔alumno por código del alumno: alta + vínculo + aceptación (S4).
-- [ ] Endpoint de Permisos (listado/PDF) (T7).
+- [ ] Endpoint de **baja de inscripción** (S15/T20): la app ya tiene la
+  regla y el botón con aviso; falta que el colega exponga la baja.
+- [ ] Persistir la **tecnicatura** en la cuenta y exponerla en `/auth/yo`
+  (T15) — hoy vive en el dispositivo.
+- [x] ~~`GET /notas` / endpoints de tutor~~ → **cancelado (L41)**: se
+  eliminaron la libreta (L39) y el rol tutor (S3/S4).
+- [x] ~~Endpoint de Permisos~~ → **resuelto (T18)**: el PDF se genera en
+  el dispositivo; solo hace falta `GET /mis-inscripciones` (ya existe).
 
 **Cierre (Paso 6, cuando todo funcione):**
 - [ ] Push a `original` (`formulariosepetn36-ai/appmexamen`) — hoy requiere
